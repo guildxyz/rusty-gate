@@ -33,7 +33,6 @@ const ETHERSCAN_API_KEY: &str = std::include_str!("../../../.secrets/etherscan-a
 impl Checkable for CoinRequirement {
     async fn check(&self, users: &[User]) -> Result<Vec<ReqUserAccess>> {
         let user_addresses: Vec<UserAddress> = users
-            .clone()
             .iter()
             .flat_map(|u| {
                 u.addresses.iter().map(|a| UserAddress {
