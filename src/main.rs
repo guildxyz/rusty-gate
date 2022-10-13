@@ -1,8 +1,14 @@
-use actix_web::{get, web, App, HttpServer, Responder};
+#![allow(legacy_derive_helpers)]
+
+use actix_web::{middleware::Logger, App, HttpServer};
 use anyhow::Error;
 use env_logger::{Builder, Env};
 use log::{error, info};
 use structopt::StructOpt;
+
+mod api;
+mod requirements;
+mod types;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -21,11 +27,6 @@ struct Opt {
     /// Set port number
     #[structopt(long, short, default_value = "8080")]
     port: u16,
-}
-
-#[get("/hello/{name}")]
-async fn greet(name: web::Path<String>) -> impl Responder {
-    format!("Hello {name}!")
 }
 
 #[tokio::main]
@@ -47,10 +48,12 @@ async fn main() -> ! {
 async fn try_main(ip: &str, port: u16) -> Result<(), Error> {
     info!("Listening on http://{}:{}", ip, port);
 
+    use api::router::*;
+
     HttpServer::new(|| {
         App::new()
-            .route("/hello", web::get().to(|| async { "Hello World!" }))
-            .service(greet)
+            .wrap(Logger::default())
+            .service(check_roles_of_members)
     })
     .bind((ip, port))
     .map_err(Error::msg)?
