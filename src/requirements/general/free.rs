@@ -1,5 +1,5 @@
 use crate::{
-    requirements::Checkable,
+    requirements::{errors::CheckableError, Checkable},
     types::{NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
 use anyhow::Result;
@@ -32,8 +32,10 @@ impl Checkable for FreeRequirement {
     }
 }
 
-impl From<&Requirement> for FreeRequirement {
-    fn from(req: &Requirement) -> Self {
-        FreeRequirement { id: req.id }
+impl TryFrom<&Requirement> for FreeRequirement {
+    type Error = CheckableError;
+
+    fn try_from(req: &Requirement) -> Result<Self, Self::Error> {
+        Ok(FreeRequirement { id: req.id })
     }
 }

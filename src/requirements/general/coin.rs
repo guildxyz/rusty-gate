@@ -1,20 +1,15 @@
 use crate::{
-    requirements::Checkable,
-    types::{Amount, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
+    requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
+    types::{AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
 use anyhow::Result;
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde_aux::prelude::*;
 
-struct CoinReqData {
-    pub min_amount: Option<Amount>,
-    pub max_amount: Option<Amount>,
-}
-
 pub struct CoinRequirement {
     id: NumberId,
-    data: Option<CoinReqData>,
+    data: Option<AmountLimits>,
     chain: Chain,
 }
 
@@ -33,7 +28,6 @@ const ETHERSCAN_API_KEY: &str = std::include_str!("../../../.secrets/etherscan-a
 impl Checkable for CoinRequirement {
     async fn check(&self, users: &[User]) -> Result<Vec<ReqUserAccess>> {
         let user_addresses: Vec<UserAddress> = users
-            .clone()
             .iter()
             .flat_map(|u| {
                 u.addresses.iter().map(|a| UserAddress {
@@ -56,29 +50,10 @@ impl Checkable for CoinRequirement {
 
             let amount = (body.result as f64) / (10_u128.pow(18) as f64);
 
-            let access = {
-                if self.data.is_none() {
-                    amount > 0.0
-                } else {
-                    let data = self.data.as_ref().expect("This should be fine");
-                    let min_amount = data.min_amount.unwrap_or_default();
-                    let min_ok = if min_amount > 0.0 {
-                        amount >= min_amount
-                    } else {
-                        amount > 0.0
-                    };
-
-                    match data.max_amount {
-                        Some(max_amount) => min_ok && amount < max_amount,
-                        None => min_ok,
-                    }
-                }
-            };
-
             ReqUserAccess {
                 requirement_id: self.id,
                 user_id: ua.user_id,
-                access,
+                access: check_if_in_range(amount, &self.data, false),
                 amount,
             }
         }))
@@ -88,35 +63,24 @@ impl Checkable for CoinRequirement {
     }
 }
 
-impl From<&Requirement> for CoinRequirement {
-    fn from(req: &Requirement) -> Self {
-        CoinRequirement {
-            id: req.id,
-            data: if req.data.is_some() {
-                let req_data = req.data.as_ref().expect("This should be fine");
+impl TryFrom<&Requirement> for CoinRequirement {
+    type Error = CheckableError;
 
-                Some(CoinReqData {
-                    min_amount: if let Some(value) = &req_data.min_amount {
-                        match value.parse::<Amount>() {
-                            Ok(v) => Some(v),
-                            Err(_) => None,
-                        }
-                    } else {
-                        None
-                    },
-                    max_amount: if let Some(value) = &req_data.max_amount {
-                        match value.parse::<Amount>() {
-                            Ok(v) => Some(v),
-                            Err(_) => None,
-                        }
-                    } else {
-                        None
-                    },
-                })
-            } else {
-                None
-            },
-            chain: req.chain.unwrap(),
+    fn try_from(req: &Requirement) -> Result<Self, Self::Error> {
+        if req.chain.is_none() {
+            return Err(CheckableError::MissingField("chain".into()));
+        }
+        match req.chain {
+            Some(chain) => {
+                let res = CoinRequirement {
+                    id: req.id,
+                    data: AmountLimits::from_req(req),
+                    chain,
+                };
+
+                Ok(res)
+            }
+            None => Err(CheckableError::MissingField("chain".into())),
         }
     }
 }

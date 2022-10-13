@@ -1,3 +1,4 @@
+use self::errors::CheckableError;
 use crate::{
     requirements::general::{
         allowlist::AllowListRequirement, coin::CoinRequirement, free::FreeRequirement,
@@ -11,7 +12,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::collections::HashSet;
 
+mod errors;
 mod general;
+mod utils;
 
 #[async_trait]
 pub trait Checkable {
@@ -19,14 +22,14 @@ pub trait Checkable {
 }
 
 impl Requirement {
-    pub fn inner(&self) -> Box<dyn Checkable> {
+    pub fn inner(&self) -> Result<Box<dyn Checkable>, CheckableError> {
         use RequirementType::*;
 
-        match self.typ {
-            Free => Box::new(FreeRequirement::from(self)),
-            Allowlist => Box::new(AllowListRequirement::from(self)),
-            Coin => Box::new(CoinRequirement::from(self)),
-        }
+        Ok(match self.typ {
+            Free => Box::new(FreeRequirement::try_from(self)?),
+            Allowlist => Box::new(AllowListRequirement::try_from(self)?),
+            Coin => Box::new(CoinRequirement::try_from(self)?),
+        })
     }
 }
 
@@ -58,32 +61,42 @@ pub async fn check_access(
     logic: Logic,
     send_details: bool,
 ) -> CheckAccessResult {
-    type StatMut<T> = &'static std::sync::Mutex<T>;
+    use std::sync::Mutex;
+    type StatMut<T> = &'static Mutex<T>;
+
     let requirement_errors: StatMut<Vec<RequirementError>> =
-        Box::leak(Box::new(std::sync::Mutex::new(vec![])));
+        Box::leak(Box::new(Mutex::new(vec![])));
     let accesses_per_requirement: StatMut<Vec<Vec<ReqUserAccess>>> =
-        Box::leak(Box::new(std::sync::Mutex::new(vec![])));
+        Box::leak(Box::new(Mutex::new(vec![])));
     let user_ids = users.iter().map(|user| user.id);
 
     let has_access_users_per_requirement =
         futures::future::join_all(requirements.iter().map(move |req| async move {
-            let _accesses = req.inner().check(users).await;
-
-            let accesses = match _accesses {
-                Ok(a) => a,
+            let accesses = match req.inner() {
+                Ok(checkable) => checkable.check(users).await.unwrap(),
                 Err(e) => {
                     requirement_errors.lock().unwrap().push(RequirementError {
                         requirement_id: req.id,
                         msg: e.to_string(),
                     });
 
-                    vec![]
+                    users
+                        .iter()
+                        .map(|u| ReqUserAccess {
+                            requirement_id: req.id,
+                            user_id: u.id,
+                            access: false,
+                            amount: 0.0,
+                        })
+                        .collect()
                 }
             };
 
             let mut has_access_users_of_requirement = HashSet::<NumberId>::new();
 
             if send_details {
+                // Calling unwrap is fine here, read the documentation of the
+                // lock function for details.
                 accesses_per_requirement.lock().unwrap().push(
                     accesses
                         .iter()
@@ -119,6 +132,8 @@ pub async fn check_access(
                 };
 
                 let detailed = if send_details {
+                    // Calling unwrap is fine here, read the documentation of
+                    // the lock function for details.
                     let inner = accesses_per_requirement.lock().unwrap()
                         .iter()
                         .map(|reqs| {
@@ -162,10 +177,16 @@ pub async fn check_access(
                 }
             })
             .collect(),
-        errors: if !requirement_errors.lock().unwrap().is_empty() {
-            Some(requirement_errors.lock().unwrap().to_vec())
-        } else {
-            None
+        errors: {
+            // Calling unwrap is fine here, read the documentation of the
+            // lock function for details.
+            let req_errors = requirement_errors.lock().unwrap();
+
+            if !req_errors.is_empty() {
+                Some(req_errors.to_vec())
+            } else {
+                None
+            }
         },
     }
 }

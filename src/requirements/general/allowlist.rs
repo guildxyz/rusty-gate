@@ -1,5 +1,5 @@
 use crate::{
-    requirements::Checkable,
+    requirements::{errors::CheckableError, Checkable},
     types::{Address, Amount, NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
 use anyhow::Result;
@@ -41,13 +41,21 @@ impl Checkable for AllowListRequirement {
     }
 }
 
-impl From<&Requirement> for AllowListRequirement {
-    fn from(req: &Requirement) -> Self {
-        AllowListRequirement {
-            id: req.id,
-            data: AllowlistData {
-                addresses: req.data.as_ref().unwrap().addresses.clone().unwrap(),
+impl TryFrom<&Requirement> for AllowListRequirement {
+    type Error = CheckableError;
+
+    fn try_from(req: &Requirement) -> Result<Self, Self::Error> {
+        match &req.data {
+            Some(data) => match &data.addresses {
+                Some(addresses) => Ok(AllowListRequirement {
+                    id: req.id,
+                    data: AllowlistData {
+                        addresses: addresses.to_vec(),
+                    },
+                }),
+                None => Err(CheckableError::MissingField("addresses".into())),
             },
+            None => Err(CheckableError::MissingField("data".into())),
         }
     }
 }
