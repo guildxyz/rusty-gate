@@ -7,14 +7,18 @@ pub use guild_types::*;
 #[derive(Serialize, Debug)]
 pub struct DetailedAccess {
     pub requirement_id: NumberId,
-    pub access: bool,
-    pub amount: Amount,
+    pub access: Option<bool>,
+    pub amount: Option<Amount>,
 }
 
 #[derive(Serialize, Debug)]
 pub struct Access {
     pub id: NumberId,
-    pub access: bool,
+    pub access: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub warnings: Option<Vec<RequirementError>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub errors: Option<Vec<RequirementError>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detailed: Option<Vec<DetailedAccess>>,
 }
@@ -24,14 +28,6 @@ pub struct CheckAccessResult {
     pub accesses: Vec<Access>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<RequirementError>>,
-}
-
-#[derive(Copy, Clone)]
-pub struct ReqUserAccess {
-    pub requirement_id: NumberId,
-    pub user_id: NumberId,
-    pub access: bool,
-    pub amount: Amount,
 }
 
 #[serde(rename_all = "camelCase")]

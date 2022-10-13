@@ -31,8 +31,10 @@ impl Checkable for AllowListRequirement {
                 ReqUserAccess {
                     requirement_id: self.id,
                     user_id: ua.user_id,
-                    access,
-                    amount: access as i8 as Amount,
+                    access: Some(access),
+                    amount: Some(access as i8 as Amount),
+                    warning: None,
+                    error: None,
                 }
             })
             .collect();

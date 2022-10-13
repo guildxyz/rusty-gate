@@ -23,8 +23,10 @@ impl Checkable for FreeRequirement {
             .map(|ua| ReqUserAccess {
                 requirement_id: self.id,
                 user_id: ua.user_id,
-                access: true,
-                amount: 1.0,
+                access: Some(true),
+                amount: Some(1.0),
+                warning: None,
+                error: None,
             })
             .collect();
 

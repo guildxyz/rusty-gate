@@ -53,8 +53,10 @@ impl Checkable for CoinRequirement {
             ReqUserAccess {
                 requirement_id: self.id,
                 user_id: ua.user_id,
-                access: check_if_in_range(amount, &self.data, false),
-                amount,
+                access: Some(check_if_in_range(amount, &self.data, false)),
+                amount: Some(amount),
+                warning: None,
+                error: None,
             }
         }))
         .await;
