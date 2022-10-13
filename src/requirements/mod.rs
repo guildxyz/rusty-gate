@@ -10,7 +10,10 @@ use crate::{
 };
 use anyhow::Result;
 use async_trait::async_trait;
-use std::collections::HashSet;
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 mod errors;
 mod general;
@@ -61,21 +64,20 @@ pub async fn check_access(
     logic: Logic,
     send_details: bool,
 ) -> CheckAccessResult {
-    use std::sync::Mutex;
-    type StatMut<T> = &'static Mutex<T>;
+    type ArcMut<T> = Arc<Mutex<T>>;
 
-    let requirement_errors: StatMut<Vec<RequirementError>> =
-        Box::leak(Box::new(Mutex::new(vec![])));
-    let accesses_per_requirement: StatMut<Vec<Vec<ReqUserAccess>>> =
-        Box::leak(Box::new(Mutex::new(vec![])));
+    let req_errors = Arc::new(Mutex::new(vec![]));
+    let acc_per_req = Arc::new(Mutex::new(Vec::<Vec<ReqUserAccess>>::new()));
     let user_ids = users.iter().map(|user| user.id);
 
     let has_access_users_per_requirement =
-        futures::future::join_all(requirements.iter().map(move |req| async move {
+        futures::future::join_all(requirements.iter().map(|req| async {
+            let req_errors = Arc::clone(&req_errors);
+
             let accesses = match req.inner() {
                 Ok(checkable) => checkable.check(users).await.unwrap(),
                 Err(e) => {
-                    requirement_errors.lock().unwrap().push(RequirementError {
+                    req_errors.lock().unwrap().push(RequirementError {
                         requirement_id: req.id,
                         msg: e.to_string(),
                     });
@@ -97,7 +99,7 @@ pub async fn check_access(
             if send_details {
                 // Calling unwrap is fine here, read the documentation of the
                 // lock function for details.
-                accesses_per_requirement.lock().unwrap().push(
+                acc_per_req.lock().unwrap().push(
                     accesses
                         .iter()
                         .map(|a| ReqUserAccess {
@@ -125,6 +127,8 @@ pub async fn check_access(
     CheckAccessResult {
         accesses: user_ids
             .map(|id| {
+            let acc_per_req = Arc::clone(&acc_per_req);
+
                 let access = if ngate {
                     !has_access_users.contains(&id)
                 } else {
@@ -134,7 +138,7 @@ pub async fn check_access(
                 let detailed = if send_details {
                     // Calling unwrap is fine here, read the documentation of
                     // the lock function for details.
-                    let inner = accesses_per_requirement.lock().unwrap()
+                    let inner = acc_per_req.lock().unwrap()
                         .iter()
                         .map(|reqs| {
                             let mut filtered =
@@ -180,7 +184,7 @@ pub async fn check_access(
         errors: {
             // Calling unwrap is fine here, read the documentation of the
             // lock function for details.
-            let req_errors = requirement_errors.lock().unwrap();
+            let req_errors = req_errors.lock().unwrap();
 
             if !req_errors.is_empty() {
                 Some(req_errors.to_vec())

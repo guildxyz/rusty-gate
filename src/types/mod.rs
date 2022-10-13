@@ -65,12 +65,9 @@ impl AmountLimits {
             None => None,
         };
 
-        match &req.data {
-            Some(data) => Some(Self {
-                min_amount: get_inner(&data.min_amount),
-                max_amount: get_inner(&data.max_amount),
-            }),
-            None => None,
-        }
+        req.data.as_ref().map(|data| Self {
+            min_amount: get_inner(&data.min_amount),
+            max_amount: get_inner(&data.max_amount),
+        })
     }
 }
