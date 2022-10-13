@@ -69,9 +69,6 @@ impl TryFrom<&Requirement> for CoinRequirement {
     type Error = CheckableError;
 
     fn try_from(req: &Requirement) -> Result<Self, Self::Error> {
-        if req.chain.is_none() {
-            return Err(CheckableError::MissingField("chain".into()));
-        }
         match req.chain {
             Some(chain) => {
                 let res = CoinRequirement {
