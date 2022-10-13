@@ -49,3 +49,28 @@ pub struct CheckRolesOfMembersResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<RequirementError>>,
 }
+
+pub struct AmountLimits {
+    pub min_amount: Option<Amount>,
+    pub max_amount: Option<Amount>,
+}
+
+impl AmountLimits {
+    pub fn from_req(req: &Requirement) -> Option<Self> {
+        let get_inner = |field: &Option<String>| match field {
+            Some(value) => match value.parse::<Amount>() {
+                Ok(v) => Some(v),
+                Err(_) => None,
+            },
+            None => None,
+        };
+
+        match &req.data {
+            Some(data) => Some(Self {
+                min_amount: get_inner(&data.min_amount),
+                max_amount: get_inner(&data.max_amount),
+            }),
+            None => None,
+        }
+    }
+}
