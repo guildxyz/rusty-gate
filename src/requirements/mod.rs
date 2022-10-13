@@ -162,28 +162,33 @@ pub async fn check_access(
         accesses: user_ids
             .map(|id| {
                 let acc_per_req = Arc::clone(&acc_per_req);
+                let has_access = if ngate {
+                    !has_access_users.contains(&id)
+                } else {
+                    has_access_users.contains(&id)
+                };
 
-                let access = if req_errors.is_empty() && !error_for_user.lock().unwrap().contains_key(&id) {
-                    Some(if ngate {
-                        !has_access_users.contains(&id)
-                    } else {
-                        has_access_users.contains(&id)
-                    })
+                let access = if req_errors.is_empty()
+                    && !error_for_user.lock().unwrap().contains_key(&id)
+                    || has_access
+                {
+                    Some(has_access)
                 } else {
                     None
                 };
 
-                let warnings =  warning_for_user.lock().unwrap().get(&id).cloned();
+                let warnings = warning_for_user.lock().unwrap().get(&id).cloned();
                 let errors = error_for_user.lock().unwrap().get(&id).cloned();
 
                 let detailed = if send_details {
                     // Calling unwrap is fine here, read the documentation of
                     // the lock function for details.
-                    let inner = acc_per_req.lock().unwrap()
+                    let inner = acc_per_req
+                        .lock()
+                        .unwrap()
                         .iter()
                         .map(|reqs| {
-                            let mut filtered =
-                                reqs.iter().filter(|user| user.user_id == id);
+                            let mut filtered = reqs.iter().filter(|user| user.user_id == id);
 
                             let access = filtered
                                 .clone()
@@ -197,10 +202,8 @@ pub async fn check_access(
                                 .reduce(|a, b| a + b)
                                 .unwrap_or_default();
 
-                            let requirement_id = filtered
-                                .next()
-                                .expect("Unwrapping the first element of a non-empty vector should be fine")
-                                .requirement_id;
+                            let requirement_id =
+                                filtered.next().expect("This should be fine").requirement_id;
 
                             DetailedAccess {
                                 requirement_id,
