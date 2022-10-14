@@ -15,6 +15,7 @@ struct CoinReqData {
 pub struct CoinRequirement {
     id: NumberId,
     data: Option<CoinReqData>,
+    #[allow(dead_code)]
     chain: Chain,
 }
 
