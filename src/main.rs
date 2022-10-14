@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+#![deny(clippy::dbg_macro)]
 #![allow(legacy_derive_helpers)]
 
 use actix_web::{middleware::Logger, App, HttpServer};
