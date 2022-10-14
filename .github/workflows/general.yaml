@@ -34,6 +34,7 @@ jobs:
       - name: build
         run: cargo build --color=always --all-targets --all-features
 
+      - uses: actions-rs/clippy-check@v1
       - name: clippy
         run: cargo clippy --color=always --all-targets --all-features --examples --tests
 
