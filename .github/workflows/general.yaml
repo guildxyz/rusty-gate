@@ -11,6 +11,7 @@ jobs:
     runs-on: rust
     steps:
       - uses: actions/checkout@v2
+      - run: rustup component add clippy
       - run: cargo fmt -- --check
   test:
     runs-on: rust
@@ -21,8 +22,13 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          components: clippy
           override: true
           profile: minimal
+
+      - uses: actions-rs/clippy@master
+        with:
+          args: --all-features --all-targets
 
       - uses: actions/checkout@v2
 
@@ -34,7 +40,6 @@ jobs:
       - name: build
         run: cargo build --color=always --all-targets --all-features
 
-      - uses: actions-rs/clippy-check@v1
       - name: clippy
         run: cargo clippy --color=always --all-targets --all-features --examples --tests
 
