@@ -11,7 +11,7 @@ jobs:
     runs-on: rust
     steps:
       - uses: actions/checkout@v2
-      - run: rustup component add clippy
+      - run: rustup component add rustfmt
       - run: cargo fmt -- --check
   test:
     runs-on: rust
