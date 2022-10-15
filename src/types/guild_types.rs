@@ -120,3 +120,13 @@ pub struct UserAddress {
     pub user_id: NumberId,
     pub address: String,
 }
+
+#[derive(Clone)]
+pub struct ReqUserAccess {
+    pub requirement_id: NumberId,
+    pub user_id: NumberId,
+    pub access: Option<bool>,
+    pub amount: Option<Amount>,
+    pub warning: Option<String>,
+    pub error: Option<String>,
+}

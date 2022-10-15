@@ -7,14 +7,18 @@ pub use guild_types::*;
 #[derive(Serialize, Debug)]
 pub struct DetailedAccess {
     pub requirement_id: NumberId,
-    pub access: bool,
-    pub amount: Amount,
+    pub access: Option<bool>,
+    pub amount: Option<Amount>,
 }
 
 #[derive(Serialize, Debug)]
 pub struct Access {
     pub id: NumberId,
-    pub access: bool,
+    pub access: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub warnings: Option<Vec<RequirementError>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub errors: Option<Vec<RequirementError>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detailed: Option<Vec<DetailedAccess>>,
 }
@@ -24,14 +28,6 @@ pub struct CheckAccessResult {
     pub accesses: Vec<Access>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<RequirementError>>,
-}
-
-#[derive(Copy, Clone)]
-pub struct ReqUserAccess {
-    pub requirement_id: NumberId,
-    pub user_id: NumberId,
-    pub access: bool,
-    pub amount: Amount,
 }
 
 #[serde(rename_all = "camelCase")]
@@ -48,4 +44,26 @@ pub struct CheckRolesOfMembersResult {
     pub users: Vec<Access>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<RequirementError>>,
+}
+
+pub struct AmountLimits {
+    pub min_amount: Option<Amount>,
+    pub max_amount: Option<Amount>,
+}
+
+impl AmountLimits {
+    pub fn from_req(req: &Requirement) -> Option<Self> {
+        let get_inner = |field: &Option<String>| match field {
+            Some(value) => match value.parse::<Amount>() {
+                Ok(v) => Some(v),
+                Err(_) => None,
+            },
+            None => None,
+        };
+
+        req.data.as_ref().map(|data| Self {
+            min_amount: get_inner(&data.min_amount),
+            max_amount: get_inner(&data.max_amount),
+        })
+    }
 }
