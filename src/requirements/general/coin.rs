@@ -9,7 +9,7 @@ use serde_aux::prelude::*;
 
 pub struct CoinRequirement {
     id: NumberId,
-    data: Option<CoinReqData>,
+    data: Option<AmountLimits>,
     #[allow(dead_code)]
     chain: Chain,
 }
