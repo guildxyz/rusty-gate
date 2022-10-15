@@ -1,0 +1,47 @@
+name: general code check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  fmt:
+    name: formatting
+    runs-on: rust
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup component add rustfmt
+      - run: cargo fmt -- --check
+  test:
+    runs-on: rust
+
+    env:
+      RUSTFLAGS: -Dwarnings # fails on warnings as well
+    steps:
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+          override: true
+          profile: minimal
+
+      - uses: actions-rs/clippy@master
+        with:
+          args: --all-features --all-targets
+
+      - uses: actions/checkout@v2
+
+      - name: secrets from secret
+        run: |
+          mkdir .secrets
+          printf ${{ secrets.ETHERSCAN_API_KEY }} >> .secrets/etherscan-api-key
+
+      - name: build
+        run: cargo build --color=always --all-targets --all-features
+
+      - name: clippy
+        run: cargo clippy --color=always --all-targets --all-features --examples --tests
+
+      - name: test
+        run: cargo t --all-features
