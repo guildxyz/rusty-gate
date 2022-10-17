@@ -39,4 +39,7 @@ jobs:
         run: cargo clippy --color=always --all-targets --all-features --examples --tests
 
       - name: test
+      with:
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
         run: cargo t --all-features
