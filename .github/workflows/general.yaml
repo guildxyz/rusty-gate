@@ -32,11 +32,6 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: secrets from secret
-        run: |
-          mkdir .secrets
-          printf ${{ secrets.ETHERSCAN_API_KEY }} >> .secrets/etherscan-api-key
-
       - name: build
         run: cargo build --color=always --all-targets --all-features
 
