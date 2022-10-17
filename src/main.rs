@@ -2,6 +2,9 @@
 #![deny(clippy::dbg_macro)]
 #![allow(legacy_derive_helpers)]
 
+#[macro_use]
+extern crate dotenv_codegen;
+
 use actix_web::{middleware::Logger, App, HttpServer};
 use anyhow::Error;
 use env_logger::{Builder, Env};
@@ -9,6 +12,7 @@ use log::{error, info};
 use structopt::StructOpt;
 
 mod api;
+mod config;
 mod requirements;
 mod types;
 
@@ -33,6 +37,8 @@ struct Opt {
 
 #[tokio::main]
 async fn main() -> ! {
+    dotenv::dotenv().ok();
+
     let opt = Opt::from_args();
 
     Builder::from_env(Env::default().default_filter_or(opt.log)).init();

@@ -1,4 +1,5 @@
 use crate::{
+    config::ETHERSCAN_API_KEY,
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
     types::{Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
@@ -23,7 +24,6 @@ pub struct EtherscanResponse {
 // Etherscan
 const ETHERSCAN: &str = "https://api.etherscan.io/api?module=account&action=balance&address=";
 const TAG_AND_KEY: &str = "&tag=latest&apikey=";
-const ETHERSCAN_API_KEY: &str = std::include_str!("../../../.secrets/etherscan-api-key");
 
 const DECIMALS: u32 = 18;
 const DIVISOR: Amount = 10_u128.pow(DECIMALS) as Amount;
@@ -46,8 +46,8 @@ impl Checkable for CoinRequirement {
             let mut amount = None;
 
             let response = reqwest::get(format!(
-                "{ETHERSCAN}{}{TAG_AND_KEY}{ETHERSCAN_API_KEY}",
-                ua.address
+                "{ETHERSCAN}{}{TAG_AND_KEY}{}",
+                ua.address, *ETHERSCAN_API_KEY
             ))
             .await;
 
