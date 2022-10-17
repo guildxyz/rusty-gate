@@ -1,4 +1,5 @@
 use serde::Serialize;
+use serde_with::skip_serializing_none;
 
 pub mod guild_types;
 pub use guild_types::*;
@@ -23,10 +24,10 @@ pub struct Access {
     pub detailed: Option<Vec<DetailedAccess>>,
 }
 
+#[skip_serializing_none]
 #[derive(Serialize, Debug)]
 pub struct CheckAccessResult {
     pub accesses: Vec<Access>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<RequirementError>>,
 }
 
@@ -37,12 +38,12 @@ pub struct RequirementError {
     pub msg: String,
 }
 
+#[skip_serializing_none]
 #[serde(rename_all = "camelCase")]
 #[derive(Serialize, Debug)]
 pub struct CheckRolesOfMembersResult {
     pub role_id: NumberId,
     pub users: Vec<Access>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<RequirementError>>,
 }
 
