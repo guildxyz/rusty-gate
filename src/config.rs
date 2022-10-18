@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use web3_rpc::web3::Web3;
 
 use crate::types::{Address, Chain};
@@ -31,7 +31,7 @@ macro dotenv($var: expr) {
 }
 
 lazy_static::lazy_static! {
-    pub static ref PROVIDERS: Mutex<HashMap<u8, Provider>> = Mutex::new({
+    pub static ref PROVIDERS: RwLock<HashMap<u8, Provider>> = RwLock::new({
         let mut providers = HashMap::new();
 
         providers.insert(

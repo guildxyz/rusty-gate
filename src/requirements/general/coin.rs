@@ -42,9 +42,7 @@ impl Checkable for CoinRequirement {
             let mut error = None;
             let mut amount = None;
 
-            let providers = PROVIDERS.lock().await;
-
-            match &providers.get(&(self.chain as u8)) {
+            match &PROVIDERS.read().await.get(&(self.chain as u8)) {
                 Some(provider) => {
                     let response = provider
                         .single
