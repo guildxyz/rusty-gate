@@ -18,6 +18,7 @@ jobs:
 
     env:
       RUSTFLAGS: -Dwarnings # fails on warnings as well
+      ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
     steps:
       - uses: actions-rs/toolchain@v1
         with:
@@ -31,11 +32,6 @@ jobs:
           args: --all-features --all-targets
 
       - uses: actions/checkout@v2
-
-      - name: secrets from secret
-        run: |
-          mkdir .secrets
-          printf ${{ secrets.ETHERSCAN_API_KEY }} >> .secrets/etherscan-api-key
 
       - name: build
         run: cargo build --color=always --all-targets --all-features
