@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 #![deny(clippy::dbg_macro)]
 #![allow(legacy_derive_helpers)]
+#![feature(decl_macro)]
 
 #[macro_use]
 extern crate dotenv_codegen;
