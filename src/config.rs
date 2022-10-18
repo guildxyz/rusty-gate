@@ -1,3 +1,3 @@
 lazy_static::lazy_static! {
-    pub static ref ETHERSCAN_API_KEY: &'static str = dotenv!("ETHERSCAN_API_KEY");
+    pub static ref ETHEREUM_RPC: &'static str = dotenv!("ETHEREUM_RPC");
 }

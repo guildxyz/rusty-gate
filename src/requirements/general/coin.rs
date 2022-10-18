@@ -1,5 +1,5 @@
 use crate::{
-    config::ETHERSCAN_API_KEY,
+    config::ETHEREUM_RPC,
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
     types::{Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
@@ -7,6 +7,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde_aux::prelude::*;
+use web3_rpc::{model::Tag, web3::Web3};
 
 pub struct CoinRequirement {
     id: NumberId,
@@ -20,10 +21,6 @@ pub struct EtherscanResponse {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub result: u128,
 }
-
-// Etherscan
-const ETHERSCAN: &str = "https://api.etherscan.io/api?module=account&action=balance&address=";
-const TAG_AND_KEY: &str = "&tag=latest&apikey=";
 
 const DECIMALS: u32 = 18;
 const DIVISOR: Amount = 10_u128.pow(DECIMALS) as Amount;
@@ -45,16 +42,17 @@ impl Checkable for CoinRequirement {
             let mut error = None;
             let mut amount = None;
 
-            let response = reqwest::get(format!(
-                "{ETHERSCAN}{}{TAG_AND_KEY}{}",
-                ua.address, *ETHERSCAN_API_KEY
-            ))
-            .await;
+            let rpc = Web3::new(ETHEREUM_RPC.to_string());
+
+            let response = rpc.eth_get_balance(&ua.address, Some(Tag::Latest)).await;
 
             match response {
-                Ok(result) => match result.json::<EtherscanResponse>().await {
-                    Ok(body) => amount = Some(body.result as f64 / DIVISOR),
-                    Err(e) => error = Some(e.to_string()),
+                Ok(r) => match r.result {
+                    Some(v) => match u128::from_str_radix(&v[2..], 16) {
+                        Ok(balance) => amount = Some(balance as f64 / DIVISOR),
+                        Err(e) => error = Some(e.to_string()),
+                    },
+                    None => error = Some("Something went wrong".to_string()),
                 },
                 Err(e) => error = Some(e.to_string()),
             }
