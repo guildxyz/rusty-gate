@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::dbg_macro)]
 #![allow(legacy_derive_helpers)]
-#![feature(decl_macro)]
 
 use actix_web::{middleware::Logger, App, HttpServer};
 use anyhow::Error;

@@ -23,11 +23,13 @@ impl Provider {
     }
 }
 
-macro dotenv($var: expr) {
-    match std::env::var($var) {
-        Ok(val) => val,
-        Err(_) => panic!("Environment variable `{}` not found", $var),
-    }
+macro_rules! dotenv {
+    ($var: expr) => {
+        match std::env::var($var) {
+            Ok(val) => val,
+            Err(_) => panic!("Environment variable `{}` not found", $var),
+        }
+    };
 }
 
 lazy_static::lazy_static! {
