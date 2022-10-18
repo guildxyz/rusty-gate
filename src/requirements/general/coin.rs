@@ -1,5 +1,5 @@
 use crate::{
-    config::ETHEREUM_RPC,
+    config::PROVIDERS,
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
     types::{Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
@@ -7,7 +7,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde_aux::prelude::*;
-use web3_rpc::{model::Tag, web3::Web3};
+use web3_rpc::model::Tag;
 
 pub struct CoinRequirement {
     id: NumberId,
@@ -42,19 +42,30 @@ impl Checkable for CoinRequirement {
             let mut error = None;
             let mut amount = None;
 
-            let rpc = Web3::new(ETHEREUM_RPC.to_string());
+            let providers = PROVIDERS.lock().await;
 
-            let response = rpc.eth_get_balance(&ua.address, Some(Tag::Latest)).await;
+            match &providers.get(&(self.chain as u8)) {
+                Some(provider) => {
+                    let response = provider
+                        .single
+                        .eth_get_balance(&ua.address, Some(Tag::Latest))
+                        .await;
 
-            match response {
-                Ok(r) => match r.result {
-                    Some(v) => match u128::from_str_radix(&v[2..], 16) {
-                        Ok(balance) => amount = Some(balance as f64 / DIVISOR),
+                    match response {
+                        Ok(r) => match r.result {
+                            Some(v) => match u128::from_str_radix(&v[2..], 16) {
+                                Ok(balance) => amount = Some(balance as f64 / DIVISOR),
+                                Err(e) => error = Some(e.to_string()),
+                            },
+                            None => error = Some("Something went wrong".to_string()),
+                        },
                         Err(e) => error = Some(e.to_string()),
-                    },
-                    None => error = Some("Something went wrong".to_string()),
-                },
-                Err(e) => error = Some(e.to_string()),
+                    }
+                }
+                None => {
+                    error =
+                        Some(CheckableError::NoSuchChain(format!("{:?}", self.chain)).to_string())
+                }
             }
 
             ReqUserAccess {
