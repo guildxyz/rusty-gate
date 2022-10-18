@@ -23,6 +23,13 @@ impl Provider {
     }
 }
 
+macro dotenv($var: expr) {
+    match std::env::var($var) {
+        Ok(val) => val,
+        Err(_) => panic!("Environment variable `{}` not found", $var),
+    }
+}
+
 lazy_static::lazy_static! {
     pub static ref PROVIDERS: Mutex<HashMap<u8, Provider>> = Mutex::new({
         let mut providers = HashMap::new();
@@ -30,7 +37,7 @@ lazy_static::lazy_static! {
         providers.insert(
             Chain::Ethereum as u8,
             Provider::new(
-                dotenv!("ETHEREUM_RPC").into(),
+                dotenv!("ETHEREUM_RPC"),
                 "0x5ba1e12693dc8f9c48aad8770482f4739beed696".into()
             )
         );

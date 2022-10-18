@@ -3,9 +3,6 @@
 #![allow(legacy_derive_helpers)]
 #![feature(decl_macro)]
 
-#[macro_use]
-extern crate dotenv_codegen;
-
 use actix_web::{middleware::Logger, App, HttpServer};
 use anyhow::Error;
 use env_logger::{Builder, Env};
