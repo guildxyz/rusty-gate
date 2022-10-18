@@ -35,7 +35,7 @@ pub enum Chain {
     Avalanche,
     Heco,
     Harmony,
-    Goerly,
+    Goerli,
     Arbitrum,
     Celo,
     Optimism,

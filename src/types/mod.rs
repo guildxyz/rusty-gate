@@ -32,7 +32,7 @@ pub struct CheckAccessResult {
 }
 
 #[serde(rename_all = "camelCase")]
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct RequirementError {
     pub requirement_id: NumberId,
     pub msg: String,
