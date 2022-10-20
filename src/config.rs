@@ -1,8 +1,7 @@
+use crate::types::{Address, Chain};
 use std::collections::HashMap;
 use tokio::sync::RwLock;
-use web3_rpc::web3::Web3;
-
-use crate::types::{Address, Chain};
+use web3::{transports::Http, Web3};
 
 pub struct MulticallProvider {
     pub rpc_url: String,
@@ -10,14 +9,17 @@ pub struct MulticallProvider {
 }
 
 pub struct Provider {
-    pub single: Web3,
+    pub single: Web3<Http>,
     pub multi: MulticallProvider,
 }
 
 impl Provider {
     pub fn new(rpc_url: String, address: String) -> Self {
         Self {
-            single: Web3::new(rpc_url.clone()),
+            single: match Http::new(&rpc_url) {
+                Ok(transport) => Web3::new(transport),
+                Err(e) => panic!("{e}"),
+            },
             multi: MulticallProvider { rpc_url, address },
         }
     }
