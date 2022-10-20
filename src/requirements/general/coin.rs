@@ -7,7 +7,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde_aux::prelude::*;
-use web3_rpc::model::Tag;
 
 pub struct CoinRequirement {
     id: NumberId,
@@ -44,21 +43,17 @@ impl Checkable for CoinRequirement {
 
             match &PROVIDERS.read().await.get(&(self.chain as u8)) {
                 Some(provider) => {
-                    let response = provider
-                        .single
-                        .eth_get_balance(&ua.address, Some(Tag::Latest))
-                        .await;
+                    match (ua.address[2..]).parse() {
+                        Ok(a) => {
+                            let response = provider.single.eth().balance(a, None).await;
 
-                    match response {
-                        Ok(r) => match r.result {
-                            Some(v) => match u128::from_str_radix(&v[2..], 16) {
-                                Ok(balance) => amount = Some(balance as f64 / DIVISOR),
+                            match response {
+                                Ok(r) => amount = Some(r.as_u128() as f64 / DIVISOR),
                                 Err(e) => error = Some(e.to_string()),
-                            },
-                            None => error = Some("Something went wrong".to_string()),
-                        },
+                            }
+                        }
                         Err(e) => error = Some(e.to_string()),
-                    }
+                    };
                 }
                 None => {
                     error =
