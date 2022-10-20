@@ -5,20 +5,12 @@ use crate::{
 };
 use anyhow::Result;
 use async_trait::async_trait;
-use serde::Deserialize;
-use serde_aux::prelude::*;
 
 pub struct CoinRequirement {
     id: NumberId,
     data: Option<AmountLimits>,
     #[allow(dead_code)]
     chain: Chain,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct EtherscanResponse {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub result: u128,
 }
 
 const DECIMALS: u32 = 18;
