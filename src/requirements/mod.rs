@@ -14,7 +14,7 @@ use requiem::LogicTree;
 use std::{
     collections::{HashMap, HashSet},
     str::FromStr,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 mod errors;
@@ -44,10 +44,14 @@ pub async fn check_access(
     logic: &str,
     send_details: bool,
 ) -> CheckAccessResult {
-    let req_errors = Arc::new(Mutex::new(vec![]));
-    let warning_for_user = Arc::new(Mutex::new(HashMap::<NumberId, Vec<RequirementError>>::new()));
-    let error_for_user = Arc::new(Mutex::new(HashMap::<NumberId, Vec<RequirementError>>::new()));
-    let acc_per_req = Arc::new(Mutex::new(Vec::<Vec<ReqUserAccess>>::new()));
+    let req_errors = Arc::new(RwLock::new(vec![]));
+    let warning_for_user = Arc::new(RwLock::new(
+        HashMap::<NumberId, Vec<RequirementError>>::new(),
+    ));
+    let error_for_user = Arc::new(RwLock::new(
+        HashMap::<NumberId, Vec<RequirementError>>::new(),
+    ));
+    let acc_per_req = Arc::new(RwLock::new(Vec::<Vec<ReqUserAccess>>::new()));
     let user_ids = users.iter().map(|user| user.id);
 
     futures::future::join_all(requirements.iter().map(|req| async {
@@ -56,7 +60,7 @@ pub async fn check_access(
         let accesses = match req.inner() {
             Ok(checkable) => checkable.check(users).await.unwrap(),
             Err(e) => {
-                req_errors.lock().unwrap().push(RequirementError {
+                req_errors.write().unwrap().push(RequirementError {
                     requirement_id: req.id,
                     msg: e.to_string(),
                 });
@@ -80,7 +84,7 @@ pub async fn check_access(
         if send_details {
             // Calling unwrap is fine here, read the documentation of the
             // lock function for details.
-            acc_per_req.lock().unwrap().push(accesses.clone());
+            acc_per_req.write().unwrap().push(accesses.clone());
         }
 
         for a in accesses.iter() {
@@ -89,10 +93,9 @@ pub async fn check_access(
             }
 
             if let Some(warning) = &a.warning {
-                let warnings_mut = Arc::clone(&warning_for_user);
-                let mut warnings = warnings_mut.lock().unwrap();
+                let warnings = Arc::clone(&warning_for_user);
 
-                let mut user_warnings = match warnings.get(&a.user_id) {
+                let mut user_warnings = match warnings.read().unwrap().get(&a.user_id) {
                     Some(v) => v.clone(),
                     None => vec![],
                 };
@@ -102,15 +105,16 @@ pub async fn check_access(
                     msg: warning.clone(),
                 });
 
-                warnings.remove(&a.user_id);
-                warnings.insert(a.user_id, user_warnings.clone());
+                warnings
+                    .write()
+                    .unwrap()
+                    .insert(a.user_id, user_warnings.clone());
             }
 
             if let Some(error) = &a.error {
-                let errors_mut = Arc::clone(&error_for_user);
-                let mut errors = errors_mut.lock().unwrap();
+                let errors = Arc::clone(&error_for_user);
 
-                let mut user_errors = match errors.get(&a.user_id) {
+                let mut user_errors = match errors.read().unwrap().get(&a.user_id) {
                     Some(v) => v.clone(),
                     None => vec![],
                 };
@@ -120,7 +124,10 @@ pub async fn check_access(
                     msg: error.clone(),
                 });
 
-                errors.insert(a.user_id, user_errors.clone());
+                errors
+                    .write()
+                    .unwrap()
+                    .insert(a.user_id, user_errors.clone());
             }
         }
 
@@ -130,7 +137,7 @@ pub async fn check_access(
 
     // Calling unwrap is fine here, read the documentation of the
     // lock function for details.
-    let req_errors = req_errors.lock().unwrap();
+    let req_errors = req_errors.read().unwrap();
 
     CheckAccessResult {
         accesses: user_ids
@@ -141,7 +148,7 @@ pub async fn check_access(
                         let mut terminals = HashMap::new();
 
                         for (idx, value) in acc_per_req
-                            .lock()
+                            .read()
                             .unwrap()
                             .iter()
                             .map(|req_accesses| {
@@ -162,7 +169,7 @@ pub async fn check_access(
                 };
 
                 let access = if req_errors.is_empty()
-                    && !error_for_user.lock().unwrap().contains_key(&id)
+                    && !error_for_user.read().unwrap().contains_key(&id)
                     || has_access
                 {
                     Some(has_access)
@@ -170,14 +177,14 @@ pub async fn check_access(
                     None
                 };
 
-                let warnings = warning_for_user.lock().unwrap().get(&id).cloned();
-                let errors = error_for_user.lock().unwrap().get(&id).cloned();
+                let warnings = warning_for_user.read().unwrap().get(&id).cloned();
+                let errors = error_for_user.read().unwrap().get(&id).cloned();
 
                 let detailed = if send_details {
                     // Calling unwrap is fine here, read the documentation of
                     // the lock function for details.
                     let inner = acc_per_req
-                        .lock()
+                        .read()
                         .unwrap()
                         .iter()
                         .map(|reqs| {
