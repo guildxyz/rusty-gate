@@ -69,7 +69,7 @@ pub struct Requirement {
 #[derive(Deserialize, Debug, Clone)]
 pub struct Role {
     pub id: Option<NumberId>,
-    pub logic: Logic,
+    pub logic: String,
     pub requirements: Vec<Requirement>,
 }
 

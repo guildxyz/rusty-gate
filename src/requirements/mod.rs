@@ -4,15 +4,17 @@ use crate::{
         allowlist::AllowListRequirement, coin::CoinRequirement, free::FreeRequirement,
     },
     types::{
-        Access, CheckAccessResult, DetailedAccess, Logic, NumberId, ReqUserAccess, Requirement,
+        Access, CheckAccessResult, DetailedAccess, NumberId, ReqUserAccess, Requirement,
         RequirementError, RequirementType, User,
     },
 };
 use anyhow::Result;
 use async_trait::async_trait;
+use requiem::LogicTree;
 use std::{
-    collections::{HashMap, HashSet},
-    sync::{Arc, Mutex},
+    collections::HashMap,
+    str::FromStr,
+    sync::{Arc, RwLock},
 };
 
 mod errors;
@@ -21,7 +23,7 @@ mod utils;
 
 #[async_trait]
 pub trait Checkable {
-    async fn check(&self, users: &[User]) -> Result<Vec<ReqUserAccess>>;
+    async fn check(&self, users: &[User]) -> Vec<ReqUserAccess>;
 }
 
 impl Requirement {
@@ -36,155 +38,156 @@ impl Requirement {
     }
 }
 
-fn logic_gate(
-    has_access_users_per_requirement: Vec<HashSet<NumberId>>,
-    logic: Logic,
-) -> HashSet<NumberId> {
-    let mut has_access_users = has_access_users_per_requirement[0].clone();
-
-    for set in has_access_users_per_requirement.iter().skip(1) {
-        match logic {
-            Logic::Or | Logic::Nor => has_access_users.extend(set),
-            Logic::And | Logic::Nand => {
-                has_access_users = has_access_users
-                    .iter()
-                    .copied()
-                    .filter(|x| set.contains(x))
-                    .collect()
-            }
-        }
-    }
-
-    has_access_users
-}
-
 pub async fn check_access(
     users: &[User],
     requirements: &[Requirement],
-    logic: Logic,
+    logic: &str,
     send_details: bool,
 ) -> CheckAccessResult {
-    let req_errors = Arc::new(Mutex::new(vec![]));
-    let warning_for_user = Arc::new(Mutex::new(HashMap::<NumberId, Vec<RequirementError>>::new()));
-    let error_for_user = Arc::new(Mutex::new(HashMap::<NumberId, Vec<RequirementError>>::new()));
-    let acc_per_req = Arc::new(Mutex::new(Vec::<Vec<ReqUserAccess>>::new()));
+    let req_errors = Arc::new(RwLock::new(vec![]));
+    let warning_for_user = Arc::new(RwLock::new(
+        HashMap::<NumberId, Vec<RequirementError>>::new(),
+    ));
+    let error_for_user = Arc::new(RwLock::new(
+        HashMap::<NumberId, Vec<RequirementError>>::new(),
+    ));
+    let acc_per_req = Arc::new(RwLock::new(Vec::<Vec<ReqUserAccess>>::new()));
+
     let user_ids = users.iter().map(|user| user.id);
 
-    let has_access_users_per_requirement =
-        futures::future::join_all(requirements.iter().map(|req| async {
-            let req_errors = Arc::clone(&req_errors);
+    futures::future::join_all(requirements.iter().map(|req| async {
+        let req_errors = Arc::clone(&req_errors);
 
-            let accesses = match req.inner() {
-                Ok(checkable) => checkable.check(users).await.unwrap(),
-                Err(e) => {
-                    req_errors.lock().unwrap().push(RequirementError {
+        let accesses = match req.inner() {
+            Ok(checkable) => checkable.check(users).await,
+            Err(e) => {
+                req_errors.write().unwrap().push(RequirementError {
+                    requirement_id: req.id,
+                    msg: e.to_string(),
+                });
+
+                users
+                    .iter()
+                    .map(|u| ReqUserAccess {
                         requirement_id: req.id,
-                        msg: e.to_string(),
-                    });
+                        user_id: u.id,
+                        access: None,
+                        amount: None,
+                        warning: None,
+                        error: Some(e.to_string()),
+                    })
+                    .collect()
+            }
+        };
 
-                    users
-                        .iter()
-                        .map(|u| ReqUserAccess {
-                            requirement_id: req.id,
-                            user_id: u.id,
-                            access: None,
-                            amount: None,
-                            warning: None,
-                            error: None,
-                        })
-                        .collect()
-                }
-            };
+        if send_details {
+            // Calling unwrap is fine here, read the documentation of the
+            // write function for details.
+            acc_per_req.write().unwrap().push(accesses.clone());
+        }
 
-            let mut has_access_users_of_requirement = HashSet::<NumberId>::new();
+        for a in accesses.iter() {
+            if let Some(warning) = &a.warning {
+                let warnings = Arc::clone(&warning_for_user);
 
-            if send_details {
-                // Calling unwrap is fine here, read the documentation of the
-                // lock function for details.
-                acc_per_req.lock().unwrap().push(accesses.clone());
+                let mut user_warnings = match warnings.read().unwrap().get(&a.user_id) {
+                    Some(v) => v.clone(),
+                    None => vec![],
+                };
+
+                user_warnings.push(RequirementError {
+                    requirement_id: req.id,
+                    msg: warning.clone(),
+                });
+
+                warnings
+                    .write()
+                    .unwrap()
+                    .insert(a.user_id, user_warnings.clone());
             }
 
-            for a in accesses.iter() {
-                if a.access.unwrap_or_default() {
-                    has_access_users_of_requirement.insert(a.user_id);
-                }
+            if let Some(error) = &a.error {
+                let errors = Arc::clone(&error_for_user);
 
-                if let Some(warning) = &a.warning {
-                    let warnings_mut = Arc::clone(&warning_for_user);
-                    let mut warnings = warnings_mut.lock().unwrap();
+                let mut user_errors = match errors.read().unwrap().get(&a.user_id) {
+                    Some(v) => v.clone(),
+                    None => vec![],
+                };
 
-                    let mut user_warnings = match warnings.get(&a.user_id) {
-                        Some(v) => v.clone(),
-                        None => vec![],
-                    };
+                user_errors.push(RequirementError {
+                    requirement_id: req.id,
+                    msg: error.clone(),
+                });
 
-                    user_warnings.push(RequirementError {
-                        requirement_id: req.id,
-                        msg: warning.clone(),
-                    });
-
-                    warnings.remove(&a.user_id);
-                    warnings.insert(a.user_id, user_warnings.clone());
-                }
-
-                if let Some(error) = &a.error {
-                    let errors_mut = Arc::clone(&error_for_user);
-                    let mut errors = errors_mut.lock().unwrap();
-
-                    let mut user_errors = match errors.get(&a.user_id) {
-                        Some(v) => v.clone(),
-                        None => vec![],
-                    };
-
-                    user_errors.push(RequirementError {
-                        requirement_id: req.id,
-                        msg: error.clone(),
-                    });
-
-                    errors.remove(&a.user_id);
-                    errors.insert(a.user_id, user_errors.clone());
-                }
+                errors
+                    .write()
+                    .unwrap()
+                    .insert(a.user_id, user_errors.clone());
             }
-
-            has_access_users_of_requirement
-        }))
-        .await;
-
-    let has_access_users = logic_gate(has_access_users_per_requirement, logic);
-
-    let ngate = logic == Logic::Nand || logic == Logic::Nor;
+        }
+    }))
+    .await;
 
     // Calling unwrap is fine here, read the documentation of the
     // lock function for details.
-    let req_errors = req_errors.lock().unwrap();
+    let req_errors = req_errors.read().unwrap();
 
     CheckAccessResult {
         accesses: user_ids
             .map(|id| {
                 let acc_per_req = Arc::clone(&acc_per_req);
-                let has_access = if ngate {
-                    !has_access_users.contains(&id)
-                } else {
-                    has_access_users.contains(&id)
+                let has_access = match LogicTree::from_str(logic) {
+                    Ok(tree) => {
+                        let mut terminals = HashMap::new();
+                        let mut error = false;
+
+                        for (idx, value) in acc_per_req
+                            .read()
+                            .unwrap()
+                            .iter()
+                            .map(|req_accesses| {
+                                req_accesses
+                                    .iter()
+                                    .find(|a| a.user_id == id)
+                                    .expect("This should be fine")
+                                    .access
+                            })
+                            .enumerate()
+                        {
+                            match value {
+                                Some(v) => {
+                                    terminals.insert(idx as u32, v);
+                                }
+                                None => error = true,
+                            }
+                        }
+
+                        if error {
+                            None
+                        } else {
+                            Some(tree.evaluate(&terminals).unwrap_or(false))
+                        }
+                    }
+                    Err(_) => None,
                 };
 
                 let access = if req_errors.is_empty()
-                    && !error_for_user.lock().unwrap().contains_key(&id)
-                    || has_access
+                    && !error_for_user.read().unwrap().contains_key(&id)
+                    || has_access.is_some()
                 {
-                    Some(has_access)
+                    has_access
                 } else {
                     None
                 };
 
-                let warnings = warning_for_user.lock().unwrap().get(&id).cloned();
-                let errors = error_for_user.lock().unwrap().get(&id).cloned();
+                let warnings = warning_for_user.read().unwrap().get(&id).cloned();
+                let errors = error_for_user.read().unwrap().get(&id).cloned();
 
                 let detailed = if send_details {
                     // Calling unwrap is fine here, read the documentation of
                     // the lock function for details.
                     let inner = acc_per_req
-                        .lock()
+                        .read()
                         .unwrap()
                         .iter()
                         .map(|reqs| {

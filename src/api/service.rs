@@ -9,7 +9,7 @@ pub async fn check_roles_of_members(
     send_details: bool,
 ) -> Vec<CheckRolesOfMembersResult> {
     futures::future::join_all(roles.iter().map(|role| async {
-        let result = check_access(users, &role.requirements, role.logic, send_details).await;
+        let result = check_access(users, &role.requirements, &role.logic, send_details).await;
 
         CheckRolesOfMembersResult {
             role_id: role.id.expect("Unwrapping the ID should be fine"),

@@ -11,8 +11,8 @@ pub struct FreeRequirement {
 
 #[async_trait]
 impl Checkable for FreeRequirement {
-    async fn check(&self, users: &[User]) -> Result<Vec<ReqUserAccess>> {
-        let res = users
+    async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
+        users
             .iter()
             .flat_map(|u| {
                 u.addresses.iter().map(|a| UserAddress {
@@ -28,9 +28,7 @@ impl Checkable for FreeRequirement {
                 warning: None,
                 error: None,
             })
-            .collect();
-
-        Ok(res)
+            .collect()
     }
 }
 
