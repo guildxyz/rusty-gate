@@ -53,9 +53,6 @@ pub async fn check_access(
     ));
     let acc_per_req = Arc::new(RwLock::new(Vec::<Vec<ReqUserAccess>>::new()));
 
-    let a: Option<u32> = None;
-    a.unwrap();
-
     let user_ids = users.iter().map(|user| user.id);
 
     futures::future::join_all(requirements.iter().map(|req| async {
