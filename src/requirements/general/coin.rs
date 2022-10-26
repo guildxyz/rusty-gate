@@ -18,7 +18,7 @@ const DIVISOR: Amount = 10_u128.pow(DECIMALS) as Amount;
 
 #[async_trait]
 impl Checkable for CoinRequirement {
-    async fn check(&self, users: &[User]) -> Result<Vec<ReqUserAccess>> {
+    async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
         let user_addresses: Vec<UserAddress> = users
             .iter()
             .flat_map(|u| {
@@ -29,7 +29,7 @@ impl Checkable for CoinRequirement {
             })
             .collect();
 
-        let res = futures::future::join_all(user_addresses.iter().map(|ua| async move {
+        futures::future::join_all(user_addresses.iter().map(|ua| async move {
             let mut error = None;
             let mut amount = None;
 
@@ -57,7 +57,11 @@ impl Checkable for CoinRequirement {
                 requirement_id: self.id,
                 user_id: ua.user_id,
                 access: if error.is_none() {
-                    Some(check_if_in_range(amount.unwrap(), &self.data, false))
+                    Some(check_if_in_range(
+                        amount.expect("This should be fine"),
+                        &self.data,
+                        false,
+                    ))
                 } else {
                     None
                 },
@@ -66,9 +70,7 @@ impl Checkable for CoinRequirement {
                 error,
             }
         }))
-        .await;
-
-        Ok(res)
+        .await
     }
 }
 

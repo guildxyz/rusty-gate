@@ -16,8 +16,8 @@ pub struct AllowListRequirement {
 
 #[async_trait]
 impl Checkable for AllowListRequirement {
-    async fn check(&self, users: &[User]) -> Result<Vec<ReqUserAccess>> {
-        let res = users
+    async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
+        users
             .iter()
             .flat_map(|u| {
                 u.addresses.iter().map(|a| UserAddress {
@@ -37,9 +37,7 @@ impl Checkable for AllowListRequirement {
                     error: None,
                 }
             })
-            .collect();
-
-        Ok(res)
+            .collect()
     }
 }
 

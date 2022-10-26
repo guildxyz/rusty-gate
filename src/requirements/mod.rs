@@ -12,7 +12,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use requiem::LogicTree;
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     str::FromStr,
     sync::{Arc, RwLock},
 };
@@ -23,7 +23,7 @@ mod utils;
 
 #[async_trait]
 pub trait Checkable {
-    async fn check(&self, users: &[User]) -> Result<Vec<ReqUserAccess>>;
+    async fn check(&self, users: &[User]) -> Vec<ReqUserAccess>;
 }
 
 impl Requirement {
@@ -52,13 +52,17 @@ pub async fn check_access(
         HashMap::<NumberId, Vec<RequirementError>>::new(),
     ));
     let acc_per_req = Arc::new(RwLock::new(Vec::<Vec<ReqUserAccess>>::new()));
+
+    let a: Option<u32> = None;
+    a.unwrap();
+
     let user_ids = users.iter().map(|user| user.id);
 
     futures::future::join_all(requirements.iter().map(|req| async {
         let req_errors = Arc::clone(&req_errors);
 
         let accesses = match req.inner() {
-            Ok(checkable) => checkable.check(users).await.unwrap(),
+            Ok(checkable) => checkable.check(users).await,
             Err(e) => {
                 req_errors.write().unwrap().push(RequirementError {
                     requirement_id: req.id,
@@ -73,25 +77,19 @@ pub async fn check_access(
                         access: None,
                         amount: None,
                         warning: None,
-                        error: None,
+                        error: Some(e.to_string()),
                     })
                     .collect()
             }
         };
 
-        let mut has_access_users_of_requirement = HashSet::<NumberId>::new();
-
         if send_details {
             // Calling unwrap is fine here, read the documentation of the
-            // lock function for details.
+            // write function for details.
             acc_per_req.write().unwrap().push(accesses.clone());
         }
 
         for a in accesses.iter() {
-            if a.access.unwrap_or_default() {
-                has_access_users_of_requirement.insert(a.user_id);
-            }
-
             if let Some(warning) = &a.warning {
                 let warnings = Arc::clone(&warning_for_user);
 
@@ -130,8 +128,6 @@ pub async fn check_access(
                     .insert(a.user_id, user_errors.clone());
             }
         }
-
-        has_access_users_of_requirement
     }))
     .await;
 
@@ -146,6 +142,7 @@ pub async fn check_access(
                 let has_access = match LogicTree::from_str(logic) {
                     Ok(tree) => {
                         let mut terminals = HashMap::new();
+                        let mut error = false;
 
                         for (idx, value) in acc_per_req
                             .read()
@@ -155,24 +152,33 @@ pub async fn check_access(
                                 req_accesses
                                     .iter()
                                     .find(|a| a.user_id == id)
-                                    .unwrap()
+                                    .expect("This should be fine")
                                     .access
                             })
                             .enumerate()
                         {
-                            terminals.insert(idx as u32, value.unwrap_or(false));
+                            match value {
+                                Some(v) => {
+                                    terminals.insert(idx as u32, v);
+                                }
+                                None => error = true,
+                            }
                         }
 
-                        tree.evaluate(&terminals).unwrap_or(false)
+                        if error {
+                            None
+                        } else {
+                            Some(tree.evaluate(&terminals).unwrap_or(false))
+                        }
                     }
-                    Err(_) => false,
+                    Err(_) => None,
                 };
 
                 let access = if req_errors.is_empty()
                     && !error_for_user.read().unwrap().contains_key(&id)
-                    || has_access
+                    || has_access.is_some()
                 {
-                    Some(has_access)
+                    has_access
                 } else {
                     None
                 };
