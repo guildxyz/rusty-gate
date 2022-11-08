@@ -3,10 +3,12 @@ members = [
 	"gate",
 	"web",
 ]
+default-members = [
+	"web"
+]
 
 [profile.dev]
 opt-level = 3
-
 
 [workspace.dependencies]
 tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
