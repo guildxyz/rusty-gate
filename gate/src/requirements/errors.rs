@@ -6,4 +6,6 @@ pub enum CheckableError {
     MissingField(String),
     #[error("Chain `{0}` is not supported")]
     NoSuchChain(String),
+    #[error("No address attached to user `{0}`")]
+    MissingAddress(String),
 }

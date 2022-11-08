@@ -29,6 +29,20 @@ impl Checkable for CoinRequirement {
             })
             .collect();
 
+        if user_addresses.is_empty() {
+            return users
+                .iter()
+                .map(|u| ReqUserAccess {
+                    requirement_id: self.id,
+                    user_id: u.id,
+                    access: None,
+                    amount: None,
+                    warning: None,
+                    error: Some(CheckableError::MissingAddress(u.id.to_string()).to_string()),
+                })
+                .collect();
+        }
+
         futures::future::join_all(user_addresses.iter().map(|ua| async move {
             let mut error = None;
             let mut amount = None;
