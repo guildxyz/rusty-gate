@@ -1,16 +1,11 @@
 [package]
-name = "rusty-gate-web"
+name = "rusty-gate-oracle"
 version = "0.1.0"
 authors = ["Shronk <ureshpohar@gmail.com>"]
 edition = "2021"
 
 [dependencies]
 rusty-gate = { path = "../gate" }
-
-actix-web = { version = "4.2.1" }
-dotenv = { version = "0.15.0", default-features = false }
-structopt = { version = "0.3", default-features = false }
-env_logger = { version = "0.9.0" }
 
 # Common
 tokio = { workspace = true }
