@@ -17,5 +17,6 @@ requiem = { git = "https://github.com/agoraxyz/requiem.git", branch="main" }
 tokio = { workspace = true }
 log = { workspace = true }
 lazy_static = { workspace = true }
+dotenv = { workspace = true }
 anyhow = { workspace = true }
 futures = { workspace = true }
