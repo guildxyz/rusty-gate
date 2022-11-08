@@ -59,3 +59,53 @@ impl TryFrom<&Requirement> for AllowListRequirement {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::AllowListRequirement;
+    use crate::{requirements::Checkable, types::User};
+
+    #[tokio::test]
+    async fn check() {
+        let users_1 = vec![User {
+            id: 0,
+            addresses: vec!["0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE".into()],
+            platform_users: None,
+        }];
+
+        let users_2 = vec![User {
+            id: 0,
+            addresses: vec!["0x14ddfe8ea7ffc338015627d160ccaf99e8f16dd3".into()],
+            platform_users: None,
+        }];
+
+        let allowlist = AllowListRequirement {
+            id: 0,
+            data: super::AllowlistData {
+                addresses: vec![
+                    "0xe43878ce78934fe8007748ff481f03b8ee3b97de".into(),
+                    "0x20cc54c7ebc5f43b74866d839b4bd5c01bb23503".into(),
+                ],
+            },
+        };
+
+        assert_eq!(
+            allowlist
+                .check(&users_1)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
+        assert_ne!(
+            allowlist
+                .check(&users_2)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
+    }
+}

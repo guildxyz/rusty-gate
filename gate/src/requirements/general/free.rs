@@ -39,3 +39,43 @@ impl TryFrom<&Requirement> for FreeRequirement {
         Ok(FreeRequirement { id: req.id })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::FreeRequirement;
+    use crate::{requirements::Checkable, types::User};
+
+    #[tokio::test]
+    async fn check() {
+        let users_1 = vec![User {
+            id: 0,
+            addresses: vec!["0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE".into()],
+            platform_users: None,
+        }];
+
+        let users_2 = vec![User {
+            id: 0,
+            addresses: vec!["0x14ddfe8ea7ffc338015627d160ccaf99e8f16dd3".into()],
+            platform_users: None,
+        }];
+
+        let req = FreeRequirement { id: 0 };
+
+        assert_eq!(
+            req.check(&users_1)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
+        assert_ne!(
+            req.check(&users_2)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![false]
+        );
+    }
+}

@@ -9,7 +9,6 @@ use async_trait::async_trait;
 pub struct CoinRequirement {
     id: NumberId,
     data: Option<AmountLimits>,
-    #[allow(dead_code)]
     chain: Chain,
 }
 
@@ -104,5 +103,57 @@ impl TryFrom<&Requirement> for CoinRequirement {
             }
             None => Err(CheckableError::MissingField("chain".into())),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::CoinRequirement;
+    use crate::{
+        requirements::Checkable,
+        types::{AmountLimits, Chain, User},
+    };
+
+    #[tokio::test]
+    async fn check() {
+        dotenv::dotenv().ok();
+
+        let users_1 = vec![User {
+            id: 0,
+            addresses: vec!["0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE".into()],
+            platform_users: None,
+        }];
+
+        let users_2 = vec![User {
+            id: 0,
+            addresses: vec!["0x20CC54c7ebc5f43b74866D839b4BD5c01BB23503".into()],
+            platform_users: None,
+        }];
+
+        let req = CoinRequirement {
+            id: 0,
+            chain: Chain::Ethereum,
+            data: Some(AmountLimits {
+                min_amount: Some(0.0004),
+                max_amount: None,
+            }),
+        };
+
+        assert_eq!(
+            req.check(&users_1)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
+        assert_ne!(
+            req.check(&users_2)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
     }
 }
