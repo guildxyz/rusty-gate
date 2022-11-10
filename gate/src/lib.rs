@@ -6,6 +6,6 @@ pub mod types;
 macro_rules! address {
     ($addr:expr) => {{
         use std::str::FromStr;
-        crate::types::Address::from_str($addr).expect(&format!("Invalid address {}", $addr))
+        $crate::types::Address::from_str($addr).expect(&format!("Invalid address {}", $addr))
     }};
 }
