@@ -45,7 +45,7 @@ lazy_static::lazy_static! {
             Chain::Ethereum as u8,
             Provider::new(
                 dotenv!("ETHEREUM_RPC"),
-               address!("0x5ba1e12693dc8f9c48aad8770482f4739beed696")
+                address!("0x5ba1e12693dc8f9c48aad8770482f4739beed696")
             )
         );
         providers.insert(
@@ -59,21 +59,21 @@ lazy_static::lazy_static! {
             Chain::Bsc as u8,
             Provider::new(
                 dotenv!("BSC_RPC"),
-               address!( "0x41263cba59eb80dc200f3e2544eda4ed6a90e76c")
+                address!("0x41263cba59eb80dc200f3e2544eda4ed6a90e76c")
             )
         );
         providers.insert(
             Chain::Gnosis as u8,
             Provider::new(
                 dotenv!("GNOSIS_RPC"),
-               address!( "0xb5b692a88bdfc81ca69dcb1d924f59f0413a602a")
+                address!("0xb5b692a88bdfc81ca69dcb1d924f59f0413a602a")
             )
         );
         providers.insert(
             Chain::Fantom as u8,
             Provider::new(
                 dotenv!("FANTOM_RPC"),
-               address!( "0xD98e3dBE5950Ca8Ce5a4b59630a5652110403E5c")
+                address!("0xD98e3dBE5950Ca8Ce5a4b59630a5652110403E5c")
             )
         );
         providers.insert(
@@ -115,7 +115,7 @@ lazy_static::lazy_static! {
             Chain::Goerli as u8,
             Provider::new(
                 dotenv!("GOERLI_RPC"),
-               address!( "0x77dCa2C955b15e9dE4dbBCf1246B4B85b651e50e")
+                address!("0x77dCa2C955b15e9dE4dbBCf1246B4B85b651e50e")
             )
         );
         providers.insert(
@@ -129,21 +129,21 @@ lazy_static::lazy_static! {
             Chain::Moonriver as u8,
             Provider::new(
                 dotenv!("MOONRIVER_RPC"),
-               address!( "0x270f2F35bED92B7A59eA5F08F6B3fd34c8D9D9b5")
+                address!("0x270f2F35bED92B7A59eA5F08F6B3fd34c8D9D9b5")
             )
         );
         providers.insert(
             Chain::Rinkeby as u8,
             Provider::new(
                 dotenv!("RINKEBY_RPC"),
-               address!( "0x5ba1e12693dc8f9c48aad8770482f4739beed696")
+                address!("0x5ba1e12693dc8f9c48aad8770482f4739beed696")
             )
         );
         providers.insert(
             Chain::Metis as u8,
             Provider::new(
                 dotenv!("METIS_RPC"),
-               address!( "0x1a2AFb22B8A90A77a93e80ceA61f89D04e05b796")
+                address!("0x1a2AFb22B8A90A77a93e80ceA61f89D04e05b796")
             )
         );
         providers.insert(
