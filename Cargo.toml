@@ -11,9 +11,6 @@ default-members = [
 [profile.dev]
 opt-level = 3
 
-[workspace.dev-dependencies]
-shiba = { version = "0.1.1", default-features = false }
-
 [workspace.dependencies]
 tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
 log = { version = "0.4.17", default-features = false }

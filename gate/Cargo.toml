@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Shronk <ureshpohar@gmail.com>"]
 edition = "2021"
 
+[dev-dependencies]
+shiba = { version = "0.1.1", default-features = false }
+
 [dependencies]
 serde = { version = "1.0.144", features = ["derive"] }
 serde-aux = { version = "2.2.0", default-features = false }

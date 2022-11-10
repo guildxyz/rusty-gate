@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Shronk <ureshpohar@gmail.com>"]
 edition = "2021"
 
+[dev-dependencies]
+shiba = { version = "0.1.1", default-features = false }
+
 [dependencies]
 rusty-gate = { path = "../gate" }
 
