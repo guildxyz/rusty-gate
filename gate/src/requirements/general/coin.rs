@@ -21,9 +21,9 @@ impl Checkable for CoinRequirement {
         let user_addresses: Vec<UserAddress> = users
             .iter()
             .flat_map(|u| {
-                u.addresses.iter().map(|a| UserAddress {
+                u.addresses.iter().cloned().map(|address| UserAddress {
                     user_id: u.id,
-                    address: a.into(),
+                    address,
                 })
             })
             .collect();
@@ -48,17 +48,12 @@ impl Checkable for CoinRequirement {
 
             match &PROVIDERS.read().await.get(&(self.chain as u8)) {
                 Some(provider) => {
-                    match (ua.address[2..]).parse() {
-                        Ok(a) => {
-                            let response = provider.single.eth().balance(a, None).await;
+                    let response = provider.single.eth().balance(ua.address, None).await;
 
-                            match response {
-                                Ok(r) => amount = Some(r.as_u128() as f64 / DIVISOR),
-                                Err(e) => error = Some(e.to_string()),
-                            }
-                        }
+                    match response {
+                        Ok(r) => amount = Some(r.as_u128() as f64 / DIVISOR),
                         Err(e) => error = Some(e.to_string()),
-                    };
+                    }
                 }
                 None => {
                     error =
@@ -110,6 +105,7 @@ impl TryFrom<&Requirement> for CoinRequirement {
 mod test {
     use super::CoinRequirement;
     use crate::{
+        address,
         requirements::Checkable,
         types::{AmountLimits, Chain, User},
     };
@@ -120,13 +116,13 @@ mod test {
 
         let users_1 = vec![User {
             id: 0,
-            addresses: vec!["0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE".into()],
+            addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
             platform_users: None,
         }];
 
         let users_2 = vec![User {
             id: 0,
-            addresses: vec!["0x20CC54c7ebc5f43b74866D839b4BD5c01BB23503".into()],
+            addresses: vec![address!("0x20CC54c7ebc5f43b74866D839b4BD5c01BB23503")],
             platform_users: None,
         }];
 

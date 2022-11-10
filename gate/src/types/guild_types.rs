@@ -1,6 +1,6 @@
 use serde::Deserialize;
+pub use web3::types::Address;
 
-pub type Address = String;
 pub type NumberId = u64;
 pub type Amount = f64;
 
@@ -118,7 +118,7 @@ pub struct User {
 
 pub struct UserAddress {
     pub user_id: NumberId,
-    pub address: String,
+    pub address: Address,
 }
 
 #[derive(Clone)]

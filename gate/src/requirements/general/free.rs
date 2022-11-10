@@ -15,9 +15,9 @@ impl Checkable for FreeRequirement {
         users
             .iter()
             .flat_map(|u| {
-                u.addresses.iter().map(|a| UserAddress {
+                u.addresses.iter().cloned().map(|address| UserAddress {
                     user_id: u.id,
-                    address: a.into(),
+                    address,
                 })
             })
             .map(|ua| ReqUserAccess {
@@ -43,19 +43,19 @@ impl TryFrom<&Requirement> for FreeRequirement {
 #[cfg(test)]
 mod test {
     use super::FreeRequirement;
-    use crate::{requirements::Checkable, types::User};
+    use crate::{address, requirements::Checkable, types::User};
 
     #[tokio::test]
     async fn check() {
         let users_1 = vec![User {
             id: 0,
-            addresses: vec!["0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE".into()],
+            addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
             platform_users: None,
         }];
 
         let users_2 = vec![User {
             id: 0,
-            addresses: vec!["0x14ddfe8ea7ffc338015627d160ccaf99e8f16dd3".into()],
+            addresses: vec![address!("0x14ddfe8ea7ffc338015627d160ccaf99e8f16dd3")],
             platform_users: None,
         }];
 
