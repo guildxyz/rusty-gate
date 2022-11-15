@@ -1,8 +1,5 @@
+use super::{Address, Amount, NumberId};
 use serde::Deserialize;
-pub use web3::types::Address;
-
-pub type NumberId = u64;
-pub type Amount = f64;
 
 #[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

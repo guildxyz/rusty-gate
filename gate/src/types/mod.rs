@@ -1,8 +1,14 @@
 use serde::Serialize;
 use serde_with::skip_serializing_none;
+pub use web3::types::{Address, U256};
 
+pub mod balancy_types;
 pub mod guild_types;
+pub use balancy_types::*;
 pub use guild_types::*;
+
+pub type NumberId = u64;
+pub type Amount = f64;
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
