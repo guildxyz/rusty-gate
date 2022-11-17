@@ -1,4 +1,4 @@
-use crate::types::{Address, AddressTokenResponse, BalancyError, Chain};
+use crate::types::{Address, AddressTokenResponse, BalancyError, Chain, Erc20Response, U256};
 use std::collections::HashMap;
 
 // Balancy
@@ -25,7 +25,7 @@ pub async fn get_address_tokens(
     address: Address,
 ) -> Result<AddressTokenResponse, BalancyError> {
     match CHAIN_IDS.get(&(chain as u32)) {
-        None => return Err(BalancyError::ChainNotSupported(format!("{:?}", chain))),
+        None => Err(BalancyError::ChainNotSupported(format!("{:?}", chain))),
         Some(id) => {
             let body: AddressTokenResponse = reqwest::get(format!(
                 "{BASE_URL}/{ADDRESS_TOKENS}{:#x}{BALANCY_CHAIN}{id}",
@@ -40,9 +40,42 @@ pub async fn get_address_tokens(
     }
 }
 
+#[allow(dead_code)]
+pub async fn get_erc20_amount(
+    chain: Chain,
+    user_address: Address,
+    token_address: Address,
+) -> Result<U256, BalancyError> {
+    match CHAIN_IDS.get(&(chain as u32)) {
+        None => Err(BalancyError::ChainNotSupported(format!("{:?}", chain))),
+        Some(id) => {
+            let body: Erc20Response = reqwest::get(format!(
+                "{BASE_URL}/erc20/{ADDRESS_TOKENS}{:#x}{BALANCY_CHAIN}{id}",
+                user_address
+            ))
+            .await?
+            .json()
+            .await?;
+
+            match body
+                .result
+                .iter()
+                .find(|t| t.token_address == token_address)
+            {
+                Some(token) => Ok(token.amount),
+                None => Err(BalancyError::NoSuchTokenInWallet(token_address)),
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::{address, providers::balancy::get_address_tokens, types::Chain};
+    use crate::{
+        address,
+        providers::balancy::{get_address_tokens, get_erc20_amount},
+        types::Chain,
+    };
 
     #[tokio::test]
     async fn balancy_address_tokens() {
@@ -52,5 +85,19 @@ mod test {
         )
         .await
         .is_ok());
+    }
+
+    #[tokio::test]
+    async fn balancy_erc20() {
+        assert_eq!(
+            get_erc20_amount(
+                Chain::Bsc,
+                address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE"),
+                address!("0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56")
+            )
+            .await
+            .unwrap(),
+            "423157234052929992066".into()
+        );
     }
 }

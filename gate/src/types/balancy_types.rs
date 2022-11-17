@@ -49,3 +49,15 @@ pub struct AddressTokenResponse {
     pub erc721: Vec<Erc721>,
     pub erc1155: Vec<Erc1155>,
 }
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenAmount {
+    pub token_address: Address,
+    pub amount: U256,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Erc20Response {
+    pub result: Vec<TokenAmount>,
+}
