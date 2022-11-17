@@ -1,4 +1,5 @@
 mod config;
+mod providers;
 pub mod requirements;
 pub mod types;
 
