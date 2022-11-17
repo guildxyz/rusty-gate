@@ -1,12 +1,16 @@
 use super::{Address, U256};
 use serde::Deserialize;
 use serde_aux::prelude::*;
+use thiserror::Error;
 
-pub enum BalancyChain {
-    Ethereum = 1,
-    Bsc = 56,
-    Gnosis = 100,
-    Polygon = 137,
+#[derive(Error, Debug)]
+pub enum BalancyError {
+    #[error("Chain `{0}` is not supported by Balancy")]
+    ChainNotSupported(String),
+    #[error("User doesn't have token associated with address `{0}`")]
+    NoSuchTokenInWallet(Address),
+    #[error("{0}")]
+    RequestFailed(#[from] reqwest::Error),
 }
 
 pub enum TokenType {
@@ -27,20 +31,20 @@ pub struct Erc20 {
 #[serde(rename_all = "camelCase")]
 pub struct Erc721 {
     pub address: Address,
-    pub token_id: U256,
+    pub token_id: String,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Erc1155 {
     pub addr: Address,
-    pub token_id: U256,
+    pub token_id: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub amount: U256,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct BalancyResponse {
+pub struct AddressTokenResponse {
     pub erc20: Vec<Erc20>,
     pub erc721: Vec<Erc721>,
     pub erc1155: Vec<Erc1155>,
