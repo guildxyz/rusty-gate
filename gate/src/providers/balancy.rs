@@ -1,4 +1,4 @@
-use crate::types::{Address, AddressTokenResponse, BalancyError, Chain, Erc20Response, U256};
+use crate::types::{Address, AddressTokenResponse, BalancyError, Chain, TokenType, U256};
 use std::collections::HashMap;
 
 // Balancy
@@ -41,39 +41,102 @@ pub async fn get_address_tokens(
 }
 
 #[allow(dead_code)]
-pub async fn get_erc20_amount(
+pub async fn get_erc_amount(
     chain: Chain,
     user_address: Address,
-    token_address: Address,
+    token: TokenType,
 ) -> Result<U256, BalancyError> {
-    match CHAIN_IDS.get(&(chain as u32)) {
-        None => Err(BalancyError::ChainNotSupported(format!("{:?}", chain))),
-        Some(id) => {
-            let body: Erc20Response = reqwest::get(format!(
-                "{BASE_URL}/erc20/{ADDRESS_TOKENS}{:#x}{BALANCY_CHAIN}{id}",
-                user_address
-            ))
-            .await?
-            .json()
-            .await?;
+    let body = get_address_tokens(chain, user_address).await?;
 
-            match body
-                .result
+    use TokenType::*;
+
+    let balance = match token {
+        Erc20 { address } => dbg!(body.erc20.iter().find(|i| i.address == address))
+            .map(|token| token.amount)
+            .unwrap_or_default(),
+        Erc721 { address, id } => u128::from(
+            body.erc721
                 .iter()
-                .find(|t| t.token_address == token_address)
-            {
-                Some(token) => Ok(token.amount),
-                None => Err(BalancyError::NoSuchTokenInWallet(token_address)),
-            }
-        }
-    }
+                .any(|i| i.address == address && i.token_id == id),
+        )
+        .into(),
+        Erc1155 { address, id } => body
+            .erc1155
+            .iter()
+            .find(|i| i.addr == address && i.token_id == id)
+            .map(|token| token.amount)
+            .unwrap_or_default(),
+        _ => todo!(),
+    };
+
+    Ok(balance)
+}
+
+#[allow(dead_code)]
+pub async fn get_erc20_balance(
+    chain: Chain,
+    token_address: Address,
+    user_address: Address,
+) -> Result<f64, BalancyError> {
+    let balance = get_erc_amount(
+        chain,
+        user_address,
+        TokenType::Erc20 {
+            address: token_address,
+        },
+    )
+    .await?;
+
+    Ok(balance.as_u128() as f64 / (10_u128.pow(18) as f64))
+}
+
+#[allow(dead_code)]
+pub async fn get_erc721_balance(
+    chain: Chain,
+    token_address: Address,
+    token_id: String,
+    user_address: Address,
+) -> Result<f64, BalancyError> {
+    let balance = get_erc_amount(
+        chain,
+        user_address,
+        TokenType::Erc721 {
+            address: token_address,
+            id: token_id,
+        },
+    )
+    .await?;
+
+    Ok(balance.as_u128() as f64)
+}
+
+#[allow(dead_code)]
+pub async fn get_erc1155_balance(
+    chain: Chain,
+    token_address: Address,
+    token_id: String,
+    user_address: Address,
+) -> Result<f64, BalancyError> {
+    let balance = get_erc_amount(
+        chain,
+        user_address,
+        TokenType::Erc1155 {
+            address: token_address,
+            id: token_id,
+        },
+    )
+    .await?;
+
+    Ok(balance.as_u128() as f64)
 }
 
 #[cfg(test)]
 mod test {
     use crate::{
         address,
-        providers::balancy::{get_address_tokens, get_erc20_amount},
+        providers::balancy::{
+            get_address_tokens, get_erc1155_balance, get_erc20_balance, get_erc721_balance,
+        },
         types::Chain,
     };
 
@@ -90,14 +153,45 @@ mod test {
     #[tokio::test]
     async fn balancy_erc20() {
         assert_eq!(
-            get_erc20_amount(
+            get_erc20_balance(
                 Chain::Bsc,
-                address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE"),
-                address!("0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56")
+                address!("0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56"),
+                address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")
             )
             .await
             .unwrap(),
-            "423157234052929992066".into()
+            (423157234052929992066_u128 as f64 / (10_u128.pow(18) as f64))
+        );
+    }
+
+    #[tokio::test]
+    async fn balancy_erc721() {
+        assert_eq!(
+            get_erc721_balance(
+                Chain::Ethereum,
+                address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
+                "61313325075603536901663283754390960556726744542208800735045237225934362163454"
+                    .into(),
+                address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")
+            )
+            .await
+            .unwrap(),
+            1.0
+        );
+    }
+
+    #[tokio::test]
+    async fn balancy_erc1155() {
+        assert_eq!(
+            get_erc1155_balance(
+                Chain::Ethereum,
+                address!("0x76be3b62873462d2142405439777e971754e8e77"),
+                "10527".into(),
+                address!("0x283d678711daa088640c86a1ad3f12c00ec1252e")
+            )
+            .await
+            .unwrap(),
+            595.0
         );
     }
 }
