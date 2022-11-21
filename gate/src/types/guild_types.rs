@@ -1,3 +1,8 @@
+use crate::requirements::{
+    errors::CheckableError,
+    general::{allowlist::AllowListRequirement, coin::CoinRequirement, free::FreeRequirement},
+    Checkable,
+};
 use serde::Deserialize;
 pub use web3::types::Address;
 
@@ -64,6 +69,18 @@ pub struct Requirement {
     pub address: Option<Address>,
     pub data: Option<RequirementData>,
     pub chain: Option<Chain>,
+}
+
+impl Requirement {
+    pub fn inner(&self) -> Result<Box<dyn Checkable>, CheckableError> {
+        use RequirementType::*;
+
+        Ok(match self.typ {
+            Free => Box::new(FreeRequirement::try_from(self)?),
+            Allowlist => Box::new(AllowListRequirement::try_from(self)?),
+            Coin => Box::new(CoinRequirement::try_from(self)?),
+        })
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
