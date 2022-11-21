@@ -1,6 +1,8 @@
-use super::{Address, U256};
+use crate::{
+    types::{Address, U256},
+    utils::u256_from_str,
+};
 use serde::Deserialize;
-use serde_aux::prelude::*;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -16,14 +18,14 @@ pub enum BalancyError {
 pub enum TokenType {
     Native,
     Erc20 { address: Address },
-    Erc721 { address: Address, id: U256 },
-    Erc1155 { address: Address, id: U256 },
+    Erc721 { address: Address, id: String },
+    Erc1155 { address: Address, id: String },
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Erc20 {
     pub address: Address,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(deserialize_with = "u256_from_str")]
     pub amount: U256,
 }
 
@@ -39,7 +41,7 @@ pub struct Erc721 {
 pub struct Erc1155 {
     pub addr: Address,
     pub token_id: String,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(deserialize_with = "u256_from_str")]
     pub amount: U256,
 }
 
@@ -48,16 +50,4 @@ pub struct AddressTokenResponse {
     pub erc20: Vec<Erc20>,
     pub erc721: Vec<Erc721>,
     pub erc1155: Vec<Erc1155>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenAmount {
-    pub token_address: Address,
-    pub amount: U256,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Erc20Response {
-    pub result: Vec<TokenAmount>,
 }
