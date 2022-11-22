@@ -5,14 +5,14 @@ use crate::{
 use std::{collections::HashMap, sync::Arc};
 use web3::{transports::Http, Web3};
 
-pub struct MulticallProvider {
+pub struct MulticallParams {
     pub rpc_url: String,
     pub address: Address,
 }
 
 pub struct Provider {
     pub single: Web3<Http>,
-    pub multi: MulticallProvider,
+    pub multi: MulticallParams,
 }
 
 impl Provider {
@@ -22,7 +22,7 @@ impl Provider {
                 Ok(transport) => Web3::new(transport),
                 Err(e) => panic!("{e}"),
             },
-            multi: MulticallProvider { rpc_url, address },
+            multi: MulticallParams { rpc_url, address },
         }
     }
 }
