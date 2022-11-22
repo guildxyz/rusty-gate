@@ -1,8 +1,39 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-pub mod guild_types;
-pub use guild_types::*;
+mod platform;
+mod requirement;
+mod user;
+pub use platform::*;
+pub use requirement::*;
+pub use user::*;
+
+pub use web3::types::Address;
+pub type NumberId = u64;
+pub type Amount = f64;
+
+#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Chain {
+    Ethereum,
+    Polygon,
+    Gnosis,
+    Bsc,
+    Fantom,
+    Avalanche,
+    Heco,
+    Harmony,
+    Goerli,
+    Arbitrum,
+    Celo,
+    Optimism,
+    Moonriver,
+    Rinkeby,
+    Metis,
+    Cronos,
+    Boba,
+    Palm,
+}
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -29,13 +60,6 @@ pub struct Access {
 pub struct CheckAccessResult {
     pub accesses: Vec<Access>,
     pub errors: Option<Vec<RequirementError>>,
-}
-
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct RequirementError {
-    pub requirement_id: NumberId,
-    pub msg: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -67,4 +91,19 @@ impl AmountLimits {
             max_amount: get_inner(&data.max_amount),
         })
     }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Role {
+    pub id: Option<NumberId>,
+    pub logic: String,
+    pub requirements: Vec<Requirement>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckRolesOfMembersRequest {
+    pub users: Vec<User>,
+    pub roles: Vec<Role>,
+    pub send_details: Option<bool>,
 }
