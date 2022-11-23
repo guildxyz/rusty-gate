@@ -9,7 +9,6 @@ use async_trait::async_trait;
 pub struct CoinRequirement {
     id: NumberId,
     data: Option<AmountLimits>,
-    #[allow(dead_code)]
     chain: Chain,
 }
 
@@ -22,30 +21,39 @@ impl Checkable for CoinRequirement {
         let user_addresses: Vec<UserAddress> = users
             .iter()
             .flat_map(|u| {
-                u.addresses.iter().map(|a| UserAddress {
+                u.addresses.iter().cloned().map(|address| UserAddress {
                     user_id: u.id,
-                    address: a.into(),
+                    address,
                 })
             })
             .collect();
+
+        if user_addresses.is_empty() {
+            return users
+                .iter()
+                .map(|u| ReqUserAccess {
+                    requirement_id: self.id,
+                    user_id: u.id,
+                    access: None,
+                    amount: None,
+                    warning: None,
+                    error: Some(CheckableError::MissingAddress(u.id.to_string()).to_string()),
+                })
+                .collect();
+        }
 
         futures::future::join_all(user_addresses.iter().map(|ua| async move {
             let mut error = None;
             let mut amount = None;
 
-            match &PROVIDERS.read().await.get(&(self.chain as u8)) {
+            match &PROVIDERS.get(&(self.chain as u8)) {
                 Some(provider) => {
-                    match (ua.address[2..]).parse() {
-                        Ok(a) => {
-                            let response = provider.single.eth().balance(a, None).await;
+                    let response = provider.single.eth().balance(ua.address, None).await;
 
-                            match response {
-                                Ok(r) => amount = Some(r.as_u128() as f64 / DIVISOR),
-                                Err(e) => error = Some(e.to_string()),
-                            }
-                        }
+                    match response {
+                        Ok(r) => amount = Some(r.as_u128() as f64 / DIVISOR),
                         Err(e) => error = Some(e.to_string()),
-                    };
+                    }
                 }
                 None => {
                     error =
@@ -90,5 +98,58 @@ impl TryFrom<&Requirement> for CoinRequirement {
             }
             None => Err(CheckableError::MissingField("chain".into())),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::CoinRequirement;
+    use crate::{
+        address,
+        requirements::Checkable,
+        types::{AmountLimits, Chain, User},
+    };
+
+    #[tokio::test]
+    async fn check() {
+        dotenv::dotenv().ok();
+
+        let users_1 = vec![User {
+            id: 0,
+            addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
+            platform_users: None,
+        }];
+
+        let users_2 = vec![User {
+            id: 0,
+            addresses: vec![address!("0x20CC54c7ebc5f43b74866D839b4BD5c01BB23503")],
+            platform_users: None,
+        }];
+
+        let req = CoinRequirement {
+            id: 0,
+            chain: Chain::Ethereum,
+            data: Some(AmountLimits {
+                min_amount: Some(0.0004),
+                max_amount: None,
+            }),
+        };
+
+        assert_eq!(
+            req.check(&users_1)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
+        assert_ne!(
+            req.check(&users_2)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
     }
 }

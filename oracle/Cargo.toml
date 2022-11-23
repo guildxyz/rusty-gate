@@ -1,0 +1,15 @@
+[package]
+name = "rusty-gate-oracle"
+version = "0.1.0"
+authors = ["Shronk <ureshpohar@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+rusty-gate = { path = "../gate" }
+
+# Common
+tokio = { workspace = true }
+log = { workspace = true }
+lazy_static = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }

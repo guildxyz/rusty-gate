@@ -1,17 +1,12 @@
 #![deny(clippy::all)]
 #![deny(clippy::dbg_macro)]
-#![allow(legacy_derive_helpers)]
 
 use actix_web::{middleware::Logger, App, HttpServer};
 use anyhow::Error;
 use env_logger::{Builder, Env};
 use log::{error, info};
 use structopt::StructOpt;
-
 mod api;
-mod config;
-mod requirements;
-mod types;
 
 #[derive(Debug, StructOpt)]
 #[structopt(

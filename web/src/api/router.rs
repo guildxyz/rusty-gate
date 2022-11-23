@@ -1,5 +1,6 @@
-use crate::{api::service, types::CheckRolesOfMembersRequest};
+use crate::api::service;
 use actix_web::{post, web, Responder};
+use rusty_gate::types::CheckRolesOfMembersRequest;
 
 #[post("/checkRolesOfMembers")]
 async fn check_roles_of_members(body: web::Json<CheckRolesOfMembersRequest>) -> impl Responder {

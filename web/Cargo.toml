@@ -1,0 +1,23 @@
+[package]
+name = "rusty-gate-web"
+version = "0.1.0"
+authors = ["Shronk <ureshpohar@gmail.com>"]
+edition = "2021"
+
+[dev-dependencies]
+shiba = { version = "0.1.1", default-features = false }
+
+[dependencies]
+rusty-gate = { path = "../gate" }
+
+actix-web = { version = "4.2.1" }
+structopt = { version = "0.3", default-features = false }
+env_logger = { version = "0.9.0" }
+
+# Common
+tokio = { workspace = true }
+log = { workspace = true }
+lazy_static = { workspace = true }
+dotenv = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }

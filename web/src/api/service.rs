@@ -1,4 +1,4 @@
-use crate::{
+use rusty_gate::{
     requirements::check_access,
     types::{CheckRolesOfMembersResult, Role, User},
 };

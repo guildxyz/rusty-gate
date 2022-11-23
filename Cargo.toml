@@ -1,30 +1,20 @@
-[package]
-name = "rusty-gate"
-version = "0.1.0"
-authors = ["Shronk <ureshpohar@gmail.com>"]
-edition = "2021"
+[workspace]
+members = [
+	"gate",
+	"web",
+	"oracle"
+]
+default-members = [
+	"web"
+]
 
 [profile.dev]
 opt-level = 3
 
-[dev-dependencies]
-shiba = { version = "0.1.1", default-features = false }
-
-[dependencies]
+[workspace.dependencies]
 tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
-actix-web = { version = "4.2.1" }
-serde = { version = "1.0.144", features = ["derive"] }
-serde-aux = { version = "2.2.0", default-features = false }
-serde_with = { version = "2.0.1" }
-reqwest = { version = "0.11.11", features = ["json"] }
-lazy_static = { version = "1.4.0", default-features = false }
-anyhow = { version = "1.0", default-features = false }
 log = { version = "0.4.17", default-features = false }
 dotenv = { version = "0.15.0", default-features = false }
-structopt = { version = "0.3", default-features = false }
-async-trait = { version = "0.1.57", default-features = false }
+lazy_static = { version = "1.4.0", default-features = false }
+anyhow = { version = "1.0", default-features = false }
 futures = { version = "0.3.17", default-features = false }
-thiserror = { version = "1.0.24", default-features = false }
-env_logger = { version = "0.9.0" }
-web3 = { version = "0.17.0" }
-requiem = { git = "https://github.com/agoraxyz/requiem.git", branch="main" }

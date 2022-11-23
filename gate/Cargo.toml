@@ -1,0 +1,25 @@
+[package]
+name = "rusty-gate"
+version = "0.1.0"
+authors = ["Shronk <ureshpohar@gmail.com>"]
+edition = "2021"
+
+[dev-dependencies]
+shiba = { version = "0.1.1", default-features = false }
+
+[dependencies]
+serde = { version = "1.0.144", features = ["derive"] }
+serde-aux = { version = "2.2.0", default-features = false }
+serde_with = { version = "2.0.1" }
+async-trait = { version = "0.1.57", default-features = false }
+thiserror = { version = "1.0.24", default-features = false }
+web3 = { version = "0.17.0" }
+requiem = { git = "https://github.com/agoraxyz/requiem.git", branch="main" }
+
+# Common
+tokio = { workspace = true }
+log = { workspace = true }
+lazy_static = { workspace = true }
+dotenv = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }
