@@ -94,7 +94,7 @@ pub async fn get_erc20_balance(
 pub async fn get_erc721_balance(
     chain: Chain,
     token_address: Address,
-    token_id: String,
+    token_id: U256,
     user_address: Address,
 ) -> Result<f64, BalancyError> {
     let balance = get_erc_amount(
@@ -114,7 +114,7 @@ pub async fn get_erc721_balance(
 pub async fn get_erc1155_balance(
     chain: Chain,
     token_address: Address,
-    token_id: String,
+    token_id: U256,
     user_address: Address,
 ) -> Result<f64, BalancyError> {
     let balance = get_erc_amount(
@@ -137,7 +137,7 @@ mod test {
         providers::balancy::{
             get_address_tokens, get_erc1155_balance, get_erc20_balance, get_erc721_balance,
         },
-        types::Chain,
+        types::{Chain, U256},
     };
 
     #[tokio::test]
@@ -170,8 +170,10 @@ mod test {
             get_erc721_balance(
                 Chain::Ethereum,
                 address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
-                "61313325075603536901663283754390960556726744542208800735045237225934362163454"
-                    .into(),
+                U256::from_dec_str(
+                    "61313325075603536901663283754390960556726744542208800735045237225934362163454"
+                )
+                .unwrap(),
                 address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")
             )
             .await
@@ -186,7 +188,7 @@ mod test {
             get_erc1155_balance(
                 Chain::Ethereum,
                 address!("0x76be3b62873462d2142405439777e971754e8e77"),
-                "10527".into(),
+                U256::from_dec_str("10527").unwrap(),
                 address!("0x283d678711daa088640c86a1ad3f12c00ec1252e")
             )
             .await

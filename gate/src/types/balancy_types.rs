@@ -18,8 +18,8 @@ pub enum BalancyError {
 pub enum TokenType {
     Native,
     Erc20 { address: Address },
-    Erc721 { address: Address, id: String },
-    Erc1155 { address: Address, id: String },
+    Erc721 { address: Address, id: U256 },
+    Erc1155 { address: Address, id: U256 },
 }
 
 #[derive(Deserialize, Debug)]
@@ -33,14 +33,16 @@ pub struct Erc20 {
 #[serde(rename_all = "camelCase")]
 pub struct Erc721 {
     pub address: Address,
-    pub token_id: String,
+    #[serde(deserialize_with = "u256_from_str")]
+    pub token_id: U256,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Erc1155 {
     pub addr: Address,
-    pub token_id: String,
+    #[serde(deserialize_with = "u256_from_str")]
+    pub token_id: U256,
     #[serde(deserialize_with = "u256_from_str")]
     pub amount: U256,
 }
