@@ -1,14 +1,7 @@
-use self::errors::CheckableError;
-use crate::{
-    requirements::general::{
-        allowlist::AllowListRequirement, coin::CoinRequirement, free::FreeRequirement,
-    },
-    types::{
-        Access, CheckAccessResult, DetailedAccess, NumberId, ReqUserAccess, Requirement,
-        RequirementError, RequirementType, User,
-    },
+use crate::types::{
+    Access, CheckAccessResult, DetailedAccess, NumberId, ReqUserAccess, Requirement,
+    RequirementError, User,
 };
-use anyhow::Result;
 use async_trait::async_trait;
 use requiem::LogicTree;
 use std::{
@@ -17,8 +10,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-mod errors;
-mod general;
+pub mod errors;
+pub mod general;
 mod utils;
 
 #[async_trait]
