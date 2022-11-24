@@ -19,7 +19,6 @@ lazy_static::lazy_static! {
     };
 }
 
-#[allow(dead_code)]
 pub async fn get_address_tokens(
     chain: Chain,
     address: Address,
@@ -40,7 +39,6 @@ pub async fn get_address_tokens(
     }
 }
 
-#[allow(dead_code)]
 pub async fn get_erc_amount(
     chain: Chain,
     user_address: Address,
@@ -72,7 +70,6 @@ pub async fn get_erc_amount(
     Ok(balance)
 }
 
-#[allow(dead_code)]
 pub async fn get_erc20_balance(
     chain: Chain,
     token_address: Address,
@@ -90,7 +87,6 @@ pub async fn get_erc20_balance(
     Ok(balance.as_u128() as f64 / (10_u128.pow(18) as f64))
 }
 
-#[allow(dead_code)]
 pub async fn get_erc721_balance(
     chain: Chain,
     token_address: Address,
@@ -110,7 +106,6 @@ pub async fn get_erc721_balance(
     Ok(balance.as_u128() as f64)
 }
 
-#[allow(dead_code)]
 pub async fn get_erc1155_balance(
     chain: Chain,
     token_address: Address,
