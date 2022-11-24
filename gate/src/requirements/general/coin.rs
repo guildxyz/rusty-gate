@@ -1,5 +1,5 @@
 use crate::{
-    config::PROVIDERS,
+    providers::PROVIDERS,
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
     types::{Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
