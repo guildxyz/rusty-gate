@@ -49,7 +49,10 @@ pub async fn get_erc_amount(
     use TokenType::*;
 
     let balance = match token {
-        Erc20 { address } => dbg!(body.erc20.iter().find(|i| i.address == address))
+        Erc20 { address } => body
+            .erc20
+            .iter()
+            .find(|i| i.address == address)
             .map(|token| token.amount)
             .unwrap_or_default(),
         Erc721 { address, id } => u128::from(
