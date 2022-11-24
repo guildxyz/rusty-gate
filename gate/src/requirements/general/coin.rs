@@ -46,7 +46,7 @@ impl Checkable for CoinRequirement {
             let mut error = None;
             let mut amount = None;
 
-            match &PROVIDERS.read().await.get(&(self.chain as u8)) {
+            match &PROVIDERS.get(&(self.chain as u8)) {
                 Some(provider) => {
                     let response = provider.single.eth().balance(ua.address, None).await;
 

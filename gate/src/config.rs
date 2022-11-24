@@ -2,18 +2,17 @@ use crate::{
     address,
     types::{Address, Chain},
 };
-use std::collections::HashMap;
-use tokio::sync::RwLock;
+use std::{collections::HashMap, sync::Arc};
 use web3::{transports::Http, Web3};
 
-pub struct MulticallProvider {
+pub struct MulticallParams {
     pub rpc_url: String,
     pub address: Address,
 }
 
 pub struct Provider {
     pub single: Web3<Http>,
-    pub multi: MulticallProvider,
+    pub multi: MulticallParams,
 }
 
 impl Provider {
@@ -23,7 +22,7 @@ impl Provider {
                 Ok(transport) => Web3::new(transport),
                 Err(e) => panic!("{e}"),
             },
-            multi: MulticallProvider { rpc_url, address },
+            multi: MulticallParams { rpc_url, address },
         }
     }
 }
@@ -38,7 +37,7 @@ macro_rules! dotenv {
 }
 
 lazy_static::lazy_static! {
-    pub static ref PROVIDERS: RwLock<HashMap<u8, Provider>> = RwLock::new({
+    pub static ref PROVIDERS: Arc<HashMap<u8, Provider>> = Arc::new({
         let mut providers = HashMap::new();
 
         providers.insert(

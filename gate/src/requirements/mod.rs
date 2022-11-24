@@ -26,18 +26,6 @@ pub trait Checkable {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess>;
 }
 
-impl Requirement {
-    pub fn inner(&self) -> Result<Box<dyn Checkable>, CheckableError> {
-        use RequirementType::*;
-
-        Ok(match self.typ {
-            Free => Box::new(FreeRequirement::try_from(self)?),
-            Allowlist => Box::new(AllowListRequirement::try_from(self)?),
-            Coin => Box::new(CoinRequirement::try_from(self)?),
-        })
-    }
-}
-
 pub async fn check_access(
     users: &[User],
     requirements: &[Requirement],
@@ -52,7 +40,6 @@ pub async fn check_access(
         HashMap::<NumberId, Vec<RequirementError>>::new(),
     ));
     let acc_per_req = Arc::new(RwLock::new(Vec::<Vec<ReqUserAccess>>::new()));
-
     let user_ids = users.iter().map(|user| user.id);
 
     futures::future::join_all(requirements.iter().map(|req| async {
