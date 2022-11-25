@@ -5,6 +5,8 @@ use crate::{
 use std::{collections::HashMap, sync::Arc};
 use web3::{transports::Http, Web3};
 
+pub mod balancy;
+
 pub struct MulticallParams {
     pub rpc_url: String,
     pub address: Address,
