@@ -37,7 +37,7 @@ impl Checkable for CoinRequirement {
                     access: None,
                     amount: None,
                     warning: None,
-                    error: Some(CheckableError::MissingAddress(u.id.to_string()).to_string()),
+                    error: Some(CheckableError::MissingUserAddress(u.id.to_string()).to_string()),
                 })
                 .collect();
         }
@@ -51,7 +51,7 @@ impl Checkable for CoinRequirement {
                     let response = provider.single.eth().balance(ua.address, None).await;
 
                     match response {
-                        Ok(r) => amount = Some(r.as_u128() as f64 / DIVISOR),
+                        Ok(r) => amount = Some(r.as_u128() as Amount / DIVISOR),
                         Err(e) => error = Some(e.to_string()),
                     }
                 }
@@ -111,7 +111,7 @@ mod test {
     };
 
     #[tokio::test]
-    async fn check() {
+    async fn coin_check() {
         dotenv::dotenv().ok();
 
         let users_1 = vec![User {
