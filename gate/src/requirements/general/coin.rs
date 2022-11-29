@@ -42,23 +42,19 @@ impl Checkable for CoinRequirement {
                 .collect();
         }
 
+        let Some(provider) = PROVIDERS.get(&(self.chain as u8)) else {
+            panic!();
+        };
+
         futures::future::join_all(user_addresses.iter().map(|ua| async move {
             let mut error = None;
             let mut amount = None;
 
-            match &PROVIDERS.get(&(self.chain as u8)) {
-                Some(provider) => {
-                    let response = provider.single.eth().balance(ua.address, None).await;
+            let response = provider.single.eth().balance(ua.address, None).await;
 
-                    match response {
-                        Ok(r) => amount = Some(r.as_u128() as Amount / DIVISOR),
-                        Err(e) => error = Some(e.to_string()),
-                    }
-                }
-                None => {
-                    error =
-                        Some(CheckableError::NoSuchChain(format!("{:?}", self.chain)).to_string())
-                }
+            match response {
+                Ok(r) => amount = Some(r.as_u128() as Amount / DIVISOR),
+                Err(e) => error = Some(e.to_string()),
             }
 
             ReqUserAccess {
@@ -88,6 +84,12 @@ impl TryFrom<&Requirement> for CoinRequirement {
     fn try_from(req: &Requirement) -> Result<Self, Self::Error> {
         match req.chain {
             Some(chain) => {
+                if PROVIDERS.get(&(chain as u8)).is_none() {
+                    return Err(CheckableError::NoSuchChain(
+                        CheckableError::NoSuchChain(format!("{:?}", chain)).to_string(),
+                    ));
+                }
+
                 let res = CoinRequirement {
                     id: req.id,
                     data: AmountLimits::from_req(req),
