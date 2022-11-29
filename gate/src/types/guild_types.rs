@@ -1,68 +1,6 @@
 use super::{Address, Amount, NumberId};
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Logic {
-    And,
-    Or,
-    Nand,
-    Nor,
-}
-
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum RequirementType {
-    // Erc20,
-    // Erc721,
-    // Erc1155,
-    Coin,
-    Allowlist,
-    Free,
-}
-
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Chain {
-    Ethereum,
-    Polygon,
-    Gnosis,
-    Bsc,
-    Fantom,
-    Avalanche,
-    Heco,
-    Harmony,
-    Goerli,
-    Arbitrum,
-    Celo,
-    Optimism,
-    Moonriver,
-    Rinkeby,
-    Metis,
-    Cronos,
-    Boba,
-    Palm,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct RequirementData {
-    pub addresses: Option<Vec<Address>>,
-    pub min_amount: Option<String>,
-    pub max_amount: Option<String>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Requirement {
-    pub id: NumberId,
-    #[serde(rename(deserialize = "type"))]
-    pub typ: RequirementType,
-    pub address: Option<Address>,
-    pub data: Option<RequirementData>,
-    pub chain: Option<Chain>,
-}
-
 #[derive(Deserialize, Debug, Clone)]
 pub struct Role {
     pub id: Option<NumberId>,

@@ -2,12 +2,14 @@ use crate::{
     requirements::{
         errors::CheckableError,
         general::{
-            allowlist::AllowListRequirement, coin::CoinRequirement, free::FreeRequirement,
-            token::Erc20Requirement,
+            allowlist::AllowListRequirement,
+            coin::CoinRequirement,
+            free::FreeRequirement,
+            token::{Erc20Requirement, Erc721Requirement},
         },
         Checkable,
     },
-    types::{Chain, NumberId},
+    types::{Chain, NumberId, U256},
 };
 use serde::{Deserialize, Serialize};
 pub use web3::types::Address;
@@ -25,7 +27,7 @@ pub enum Logic {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RequirementType {
     Erc20,
-    // Erc721,
+    Erc721,
     // Erc1155,
     Coin,
     Allowlist,
@@ -35,6 +37,7 @@ pub enum RequirementType {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RequirementData {
+    pub id: Option<U256>,
     pub addresses: Option<Vec<Address>>,
     pub min_amount: Option<String>,
     pub max_amount: Option<String>,
@@ -60,6 +63,7 @@ impl Requirement {
             Allowlist => Box::new(AllowListRequirement::try_from(self)?),
             Coin => Box::new(CoinRequirement::try_from(self)?),
             Erc20 => Box::new(Erc20Requirement::try_from(self)?),
+            Erc721 => Box::new(Erc721Requirement::try_from(self)?),
         })
     }
 }
