@@ -42,8 +42,11 @@ impl TryFrom<&Requirement> for FreeRequirement {
 
 #[cfg(test)]
 mod test {
-    use super::FreeRequirement;
-    use crate::{address, requirements::Checkable, types::User};
+    use crate::{
+        address,
+        requirements::{general::free::FreeRequirement, Checkable},
+        types::User,
+    };
 
     #[tokio::test]
     async fn free_check() {

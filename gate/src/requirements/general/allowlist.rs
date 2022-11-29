@@ -62,8 +62,11 @@ impl TryFrom<&Requirement> for AllowListRequirement {
 
 #[cfg(test)]
 mod test {
-    use super::AllowListRequirement;
-    use crate::{address, requirements::Checkable, types::User};
+    use crate::{
+        address,
+        requirements::{general::allowlist::AllowListRequirement, Checkable},
+        types::User,
+    };
 
     #[tokio::test]
     async fn allowlist_check() {

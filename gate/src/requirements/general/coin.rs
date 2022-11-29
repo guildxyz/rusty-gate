@@ -105,10 +105,9 @@ impl TryFrom<&Requirement> for CoinRequirement {
 
 #[cfg(test)]
 mod test {
-    use super::CoinRequirement;
     use crate::{
         address,
-        requirements::Checkable,
+        requirements::{general::coin::CoinRequirement, Checkable},
         types::{AmountLimits, Chain, User},
     };
 
