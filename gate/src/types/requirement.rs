@@ -1,7 +1,10 @@
 use crate::{
     requirements::{
         errors::CheckableError,
-        general::{allowlist::AllowListRequirement, coin::CoinRequirement, free::FreeRequirement},
+        general::{
+            allowlist::AllowListRequirement, coin::CoinRequirement, free::FreeRequirement,
+            token::Erc20Requirement,
+        },
         Checkable,
     },
     types::{Chain, NumberId},
@@ -21,7 +24,7 @@ pub enum Logic {
 #[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RequirementType {
-    // Erc20,
+    Erc20,
     // Erc721,
     // Erc1155,
     Coin,
@@ -56,6 +59,7 @@ impl Requirement {
             Free => Box::new(FreeRequirement::try_from(self)?),
             Allowlist => Box::new(AllowListRequirement::try_from(self)?),
             Coin => Box::new(CoinRequirement::try_from(self)?),
+            Erc20 => Box::new(Erc20Requirement::try_from(self)?),
         })
     }
 }
