@@ -1,7 +1,7 @@
 use crate::{
     providers::PROVIDERS,
     requirements::{
-        errors::CheckableError, general::token::ERC_ABI, utils::check_if_in_range, Checkable,
+        errors::CheckableError, general::token::ERC20_ABI, utils::check_if_in_range, Checkable,
     },
     types::{
         Address, Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User,
@@ -50,7 +50,7 @@ impl Checkable for Erc20Requirement {
         };
 
         let contract: &'static _ = Box::leak(Box::new(
-            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC_ABI)
+            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC20_ABI)
                 .unwrap(),
         ));
 
