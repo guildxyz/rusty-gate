@@ -69,7 +69,7 @@ impl Checkable for Erc721Requirement {
                         .await;
 
                     let res = match owner_res {
-                        Ok(owner) => if owner == ua.address { 1 } else { 0 }.into(),
+                        Ok(owner) => i32::from(owner == ua.address).into(),
                         Err(_) => 0.into(),
                     };
 
