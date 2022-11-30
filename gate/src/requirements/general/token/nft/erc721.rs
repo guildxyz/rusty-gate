@@ -176,7 +176,7 @@ mod test {
             platform_users: None,
         }];
 
-        let req = Erc721Requirement {
+        let req1 = Erc721Requirement {
             id: 0,
             chain: Chain::Ethereum,
             address: address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
@@ -189,8 +189,18 @@ mod test {
             },
         };
 
+        let req2 = Erc721Requirement {
+            id: 0,
+            chain: Chain::Ethereum,
+            address: address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
+            data: NftData {
+                id: None,
+                limits: None,
+            },
+        };
+
         assert_eq!(
-            req.check(&users_1)
+            req1.check(&users_1)
                 .await
                 .iter()
                 .map(|a| a.access.unwrap_or_default())
@@ -198,7 +208,24 @@ mod test {
             vec![true]
         );
         assert_ne!(
-            req.check(&users_2)
+            req1.check(&users_2)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
+
+        assert_eq!(
+            req2.check(&users_1)
+                .await
+                .iter()
+                .map(|a| a.access.unwrap_or_default())
+                .collect::<Vec<bool>>(),
+            vec![true]
+        );
+        assert_ne!(
+            req2.check(&users_2)
                 .await
                 .iter()
                 .map(|a| a.access.unwrap_or_default())
