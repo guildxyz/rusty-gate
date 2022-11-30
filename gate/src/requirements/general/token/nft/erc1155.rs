@@ -61,44 +61,51 @@ impl Checkable for Erc1155Requirement {
                 .unwrap(),
         ));
 
-        futures::future::join_all(user_addresses.iter().map(|ua| async move {
-            let mut error = None;
-            let mut amount = None;
+        let response: Result<Vec<U256>, web3::contract::Error> = contract
+            .clone()
+            .query(
+                "balanceOfBatch",
+                (
+                    user_addresses
+                        .iter()
+                        .map(|ua| ua.address)
+                        .collect::<Vec<Address>>(),
+                    vec![token_id],
+                ),
+                None,
+                Options::default(),
+                None,
+            )
+            .await;
 
-            let response: Result<U256, web3::contract::Error> = contract
-                .clone()
-                .query(
-                    "balanceOf",
-                    (ua.address, token_id),
-                    None,
-                    Options::default(),
-                    None,
-                )
-                .await;
+        let mut error = None;
+        let mut amounts: Option<Vec<Amount>> = None;
 
-            match response {
-                Ok(r) => amount = Some(r.as_u128() as Amount),
-                Err(e) => error = Some(e.to_string()),
-            }
+        match response {
+            Ok(r) => amounts = Some(r.iter().map(|v| v.as_u128() as Amount).collect()),
+            Err(e) => error = Some(e.to_string()),
+        }
 
-            ReqUserAccess {
-                requirement_id: self.id,
-                user_id: ua.user_id,
-                access: if error.is_none() {
-                    Some(check_if_in_range(
-                        amount.expect("This should be fine"),
-                        &self.data.limits,
-                        false,
-                    ))
-                } else {
-                    None
-                },
-                amount: if error.is_none() { amount } else { None },
-                warning: None,
-                error,
-            }
-        }))
-        .await
+        user_addresses
+            .iter()
+            .enumerate()
+            .map(|(idx, ua)| {
+                let amount = amounts.as_ref().expect("This should be fine")[idx];
+
+                ReqUserAccess {
+                    requirement_id: self.id,
+                    user_id: ua.user_id,
+                    access: if error.is_none() {
+                        Some(check_if_in_range(amount, &self.data.limits, false))
+                    } else {
+                        None
+                    },
+                    amount: if error.is_none() { Some(amount) } else { None },
+                    warning: None,
+                    error: error.clone(),
+                }
+            })
+            .collect()
     }
 }
 
