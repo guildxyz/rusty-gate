@@ -1,7 +1,7 @@
 use crate::{
     providers::PROVIDERS,
     requirements::{
-        errors::CheckableError, general::token::ERC721_ABI, utils::check_if_in_range, Checkable,
+        errors::CheckableError, general::token::ERC1155_ABI, utils::check_if_in_range, Checkable,
     },
     types::{
         Address, Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User,
@@ -26,6 +26,14 @@ pub struct Erc1155Requirement {
 #[async_trait]
 impl Checkable for Erc1155Requirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
+        let Some(token_id) = self.data.id else {
+            panic!()
+        };
+
+        let Some(provider) = PROVIDERS.get(&(self.chain as u8)) else {
+            panic!();
+        };
+
         let user_addresses: Vec<UserAddress> = users
             .iter()
             .flat_map(|u| {
@@ -50,12 +58,8 @@ impl Checkable for Erc1155Requirement {
                 .collect();
         }
 
-        let Some(provider) = PROVIDERS.get(&(self.chain as u8)) else {
-            panic!();
-        };
-
         let contract: &'static _ = Box::leak(Box::new(
-            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC721_ABI)
+            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC1155_ABI)
                 .unwrap(),
         ));
 
@@ -63,27 +67,16 @@ impl Checkable for Erc1155Requirement {
             let mut error = None;
             let mut amount = None;
 
-            let response: Result<U256, web3::contract::Error> = match self.data.id {
-                Some(id) => {
-                    let owner_res: Result<Address, web3::contract::Error> = contract
-                        .clone()
-                        .query("ownerOf", (id,), None, Options::default(), None)
-                        .await;
-
-                    let res = match owner_res {
-                        Ok(owner) => if owner == ua.address { 1 } else { 0 }.into(),
-                        Err(_) => 0.into(),
-                    };
-
-                    Ok(res)
-                }
-                None => {
-                    contract
-                        .clone()
-                        .query("balanceOf", (ua.address,), None, Options::default(), None)
-                        .await
-                }
-            };
+            let response: Result<U256, web3::contract::Error> = contract
+                .clone()
+                .query(
+                    "balanceOf",
+                    (ua.address, token_id),
+                    None,
+                    Options::default(),
+                    None,
+                )
+                .await;
 
             match response {
                 Ok(r) => amount = Some(r.as_u128() as Amount),
@@ -129,6 +122,12 @@ impl TryFrom<&Requirement> for Erc1155Requirement {
                     ));
                 };
 
+                if data.id.is_none() {
+                    return Err(CheckableError::NoSuchChain(
+                        CheckableError::MissingField("id".into()).to_string(),
+                    ));
+                };
+
                 match req.address {
                     Some(address) => {
                         let res = Erc1155Requirement {
@@ -159,7 +158,7 @@ mod test {
             general::token::nft::erc1155::{Erc1155Requirement, NftData},
             Checkable,
         },
-        types::{Chain, User, U256},
+        types::{AmountLimits, Chain, User, U256},
     };
 
     #[tokio::test]
@@ -168,26 +167,26 @@ mod test {
 
         let users_1 = vec![User {
             id: 0,
-            addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
+            addresses: vec![address!("0x283d678711daa088640c86a1ad3f12c00ec1252e")],
             platform_users: None,
         }];
 
         let users_2 = vec![User {
             id: 0,
-            addresses: vec![address!("0x20CC54c7ebc5f43b74866D839b4BD5c01BB23503")],
+            addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
             platform_users: None,
         }];
 
         let req = Erc1155Requirement {
             id: 0,
             chain: Chain::Ethereum,
-            address: address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
+            address: address!("0x76be3b62873462d2142405439777e971754e8e77"),
             data: NftData {
-                id: Some(U256::from_dec_str(
-                    "61313325075603536901663283754390960556726744542208800735045237225934362163454",
-                )
-                .unwrap()),
-                limits: None
+                id: Some(U256::from_dec_str("10527").unwrap()),
+                limits: Some(AmountLimits {
+                    min_amount: Some(595.0),
+                    max_amount: None,
+                }),
             },
         };
 
