@@ -26,6 +26,10 @@ pub struct Erc721Requirement {
 #[async_trait]
 impl Checkable for Erc721Requirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
+        let Some(provider) = PROVIDERS.get(&(self.chain as u8)) else {
+            panic!();
+        };
+
         let user_addresses: Vec<UserAddress> = users
             .iter()
             .flat_map(|u| {
@@ -49,10 +53,6 @@ impl Checkable for Erc721Requirement {
                 })
                 .collect();
         }
-
-        let Some(provider) = PROVIDERS.get(&(self.chain as u8)) else {
-            panic!();
-        };
 
         let contract: &'static _ = Box::leak(Box::new(
             web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC721_ABI)

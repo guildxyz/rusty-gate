@@ -18,6 +18,10 @@ const DIVISOR: Amount = 10_u128.pow(DECIMALS) as Amount;
 #[async_trait]
 impl Checkable for CoinRequirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
+        let Some(provider) = PROVIDERS.get(&(self.chain as u8)) else {
+            panic!();
+        };
+
         let user_addresses: Vec<UserAddress> = users
             .iter()
             .flat_map(|u| {
@@ -41,10 +45,6 @@ impl Checkable for CoinRequirement {
                 })
                 .collect();
         }
-
-        let Some(provider) = PROVIDERS.get(&(self.chain as u8)) else {
-            panic!();
-        };
 
         futures::future::join_all(user_addresses.iter().map(|ua| async move {
             let mut error = None;
