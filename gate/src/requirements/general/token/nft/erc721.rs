@@ -1,7 +1,10 @@
 use crate::{
     providers::PROVIDERS,
     requirements::{
-        errors::CheckableError, general::token::ERC721_ABI, utils::check_if_in_range, Checkable,
+        errors::CheckableError,
+        general::token::{nft::NftData, ERC721_ABI},
+        utils::check_if_in_range,
+        Checkable,
     },
     types::{
         Address, Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User,
@@ -10,11 +13,6 @@ use crate::{
 };
 use async_trait::async_trait;
 use web3::contract::Options;
-
-pub struct NftData {
-    id: Option<U256>,
-    limits: Option<AmountLimits>,
-}
 
 pub struct Erc721Requirement {
     id: NumberId,
