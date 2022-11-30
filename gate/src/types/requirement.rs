@@ -5,7 +5,7 @@ use crate::{
             allowlist::AllowListRequirement,
             coin::CoinRequirement,
             free::FreeRequirement,
-            token::{Erc20Requirement, Erc721Requirement},
+            token::{Erc1155Requirement, Erc20Requirement, Erc721Requirement},
         },
         Checkable,
     },
@@ -28,7 +28,7 @@ pub enum Logic {
 pub enum RequirementType {
     Erc20,
     Erc721,
-    // Erc1155,
+    Erc1155,
     Coin,
     Allowlist,
     Free,
@@ -64,6 +64,7 @@ impl Requirement {
             Coin => Box::new(CoinRequirement::try_from(self)?),
             Erc20 => Box::new(Erc20Requirement::try_from(self)?),
             Erc721 => Box::new(Erc721Requirement::try_from(self)?),
+            Erc1155 => Box::new(Erc1155Requirement::try_from(self)?),
         })
     }
 }
