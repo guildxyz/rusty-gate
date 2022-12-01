@@ -1,22 +1,27 @@
+use std::sync::Arc;
+
 use crate::{
     providers::PROVIDERS,
-    requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
-    types::{Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
+    requirements::{
+        errors::CheckableError, general::token::ERC20_ABI, utils::check_if_in_range, Checkable,
+    },
+    types::{
+        Address, Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User,
+        UserAddress, U256,
+    },
 };
-use anyhow::Result;
 use async_trait::async_trait;
+use web3::contract::Options;
 
-pub struct CoinRequirement {
+pub struct Erc20Requirement {
     id: NumberId,
+    address: Address,
     data: Option<AmountLimits>,
     chain: Chain,
 }
 
-const DECIMALS: u32 = 18;
-const DIVISOR: Amount = 10_u128.pow(DECIMALS) as Amount;
-
 #[async_trait]
-impl Checkable for CoinRequirement {
+impl Checkable for Erc20Requirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
         let user_addresses: Vec<UserAddress> = users
             .iter()
@@ -46,14 +51,30 @@ impl Checkable for CoinRequirement {
             .get(&(self.chain as u8))
             .expect("This should be fine");
 
-        futures::future::join_all(user_addresses.iter().map(|ua| async move {
+        let contract = Arc::new(
+            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC20_ABI)
+                .unwrap(),
+        );
+
+        let decimals: u8 = contract
+            .query("decimals", (), None, Options::default(), None)
+            .await
+            .unwrap();
+
+        futures::future::join_all(user_addresses.iter().map(|ua| async {
             let mut error = None;
             let mut amount = None;
 
-            let response = provider.single.eth().balance(ua.address, None).await;
+            let contract = Arc::clone(&contract);
+
+            let response: Result<U256, web3::contract::Error> = contract
+                .query("balanceOf", (ua.address,), None, Options::default(), None)
+                .await;
 
             match response {
-                Ok(r) => amount = Some(r.as_u128() as Amount / DIVISOR),
+                Ok(r) => {
+                    amount = Some(r.as_u128() as Amount / 10_u128.pow(decimals as u32) as Amount)
+                }
                 Err(e) => error = Some(e.to_string()),
             }
 
@@ -78,23 +99,31 @@ impl Checkable for CoinRequirement {
     }
 }
 
-impl TryFrom<&Requirement> for CoinRequirement {
+impl TryFrom<&Requirement> for Erc20Requirement {
     type Error = CheckableError;
 
     fn try_from(req: &Requirement) -> Result<Self, Self::Error> {
         match req.chain {
             Some(chain) => {
                 if PROVIDERS.get(&(chain as u8)).is_none() {
-                    return Err(CheckableError::NoSuchChain(format!("{:?}", chain)));
+                    return Err(CheckableError::NoSuchChain(
+                        CheckableError::NoSuchChain(format!("{:?}", chain)).to_string(),
+                    ));
                 }
 
-                let res = CoinRequirement {
-                    id: req.id,
-                    data: AmountLimits::from_req(req),
-                    chain,
-                };
+                match req.address {
+                    Some(address) => {
+                        let res = Erc20Requirement {
+                            id: req.id,
+                            address,
+                            data: AmountLimits::from_req(req),
+                            chain,
+                        };
 
-                Ok(res)
+                        Ok(res)
+                    }
+                    None => Err(CheckableError::MissingTokenAddress(req.id.to_string())),
+                }
             }
             None => Err(CheckableError::MissingField("chain".into())),
         }
@@ -105,17 +134,17 @@ impl TryFrom<&Requirement> for CoinRequirement {
 mod test {
     use crate::{
         address,
-        requirements::{general::coin::CoinRequirement, Checkable},
+        requirements::{general::token::erc20::Erc20Requirement, Checkable},
         types::{AmountLimits, Chain, User},
     };
 
     #[tokio::test]
-    async fn coin_check() {
+    async fn erc20_check() {
         dotenv::dotenv().ok();
 
         let users_1 = vec![User {
             id: 0,
-            addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
+            addresses: vec![address!("0x14DDFE8EA7FFc338015627D160ccAf99e8F16Dd3")],
             platform_users: None,
         }];
 
@@ -125,11 +154,12 @@ mod test {
             platform_users: None,
         }];
 
-        let req = CoinRequirement {
+        let req = Erc20Requirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: Chain::Goerli,
+            address: address!("0x3C65D35A8190294d39013287B246117eBf6615Bd"),
             data: Some(AmountLimits {
-                min_amount: Some(0.0004),
+                min_amount: Some(420.69),
                 max_amount: None,
             }),
         };

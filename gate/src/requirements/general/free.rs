@@ -42,11 +42,14 @@ impl TryFrom<&Requirement> for FreeRequirement {
 
 #[cfg(test)]
 mod test {
-    use super::FreeRequirement;
-    use crate::{address, requirements::Checkable, types::User};
+    use crate::{
+        address,
+        requirements::{general::free::FreeRequirement, Checkable},
+        types::User,
+    };
 
     #[tokio::test]
-    async fn check() {
+    async fn free_check() {
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],

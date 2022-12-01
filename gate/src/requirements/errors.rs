@@ -7,5 +7,9 @@ pub enum CheckableError {
     #[error("Chain `{0}` is not supported")]
     NoSuchChain(String),
     #[error("No address attached to user `{0}`")]
-    MissingAddress(String),
+    MissingUserAddress(String),
+    #[error("No address attached to requirement `id: {0}`")]
+    MissingTokenAddress(String),
+    #[error("{0}")]
+    Web3ContractError(#[from] web3::contract::Error),
 }

@@ -62,11 +62,14 @@ impl TryFrom<&Requirement> for AllowListRequirement {
 
 #[cfg(test)]
 mod test {
-    use super::AllowListRequirement;
-    use crate::{address, requirements::Checkable, types::User};
+    use crate::{
+        address,
+        requirements::{general::allowlist::AllowListRequirement, Checkable},
+        types::User,
+    };
 
     #[tokio::test]
-    async fn check() {
+    async fn allowlist_check() {
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
