@@ -85,9 +85,7 @@ impl TryFrom<&Requirement> for CoinRequirement {
         match req.chain {
             Some(chain) => {
                 if PROVIDERS.get(&(chain as u8)).is_none() {
-                    return Err(CheckableError::NoSuchChain(
-                        CheckableError::NoSuchChain(format!("{:?}", chain)).to_string(),
-                    ));
+                    return Err(CheckableError::NoSuchChain(format!("{:?}", chain)));
                 }
 
                 let res = CoinRequirement {
