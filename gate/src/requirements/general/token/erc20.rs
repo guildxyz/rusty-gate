@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     providers::PROVIDERS,
     requirements::{
@@ -49,22 +51,23 @@ impl Checkable for Erc20Requirement {
             .get(&(self.chain as u8))
             .expect("This should be fine");
 
-        let contract: &'static _ = Box::leak(Box::new(
+        let contract = Arc::new(
             web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC20_ABI)
                 .unwrap(),
-        ));
+        );
 
         let decimals: u8 = contract
             .query("decimals", (), None, Options::default(), None)
             .await
             .unwrap();
 
-        futures::future::join_all(user_addresses.iter().map(|ua| async move {
+        futures::future::join_all(user_addresses.iter().map(|ua| async {
             let mut error = None;
             let mut amount = None;
 
+            let contract = Arc::clone(&contract);
+
             let response: Result<U256, web3::contract::Error> = contract
-                .clone()
                 .query("balanceOf", (ua.address,), None, Options::default(), None)
                 .await;
 
