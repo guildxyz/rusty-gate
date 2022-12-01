@@ -14,15 +14,6 @@ use crate::{
 use serde::{Deserialize, Serialize};
 pub use web3::types::Address;
 
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Logic {
-    And,
-    Or,
-    Nand,
-    Nor,
-}
-
 #[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RequirementType {
