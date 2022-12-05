@@ -1,4 +1,4 @@
-mod types;
+pub mod types;
 
 use crate::{
     evm::balancy::types::{AddressTokenResponse, BalancyError},

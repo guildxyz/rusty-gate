@@ -31,7 +31,7 @@ pub trait BalanceQuerier {
     async fn get_special_balance(
         &self,
         token_address: Self::Address,
-        token_id: Self::Id,
+        token_id: Option<Self::Id>,
         user_addresses: &[Self::Address],
     ) -> Vec<Result<Self::Balance, Self::Error>>;
 }
