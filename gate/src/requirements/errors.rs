@@ -10,6 +10,4 @@ pub enum CheckableError {
     MissingUserAddress(String),
     #[error("No address attached to requirement `id: {0}`")]
     MissingTokenAddress(String),
-    #[error("{0}")]
-    Web3ContractError(#[from] web3::contract::Error),
 }
