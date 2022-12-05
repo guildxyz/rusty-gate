@@ -1,5 +1,5 @@
 use crate::{
-    providers::PROVIDERS,
+    providers::general::PROVIDERS,
     requirements::{
         errors::CheckableError,
         general::token::{nft::NftData, ERC1155_ABI},

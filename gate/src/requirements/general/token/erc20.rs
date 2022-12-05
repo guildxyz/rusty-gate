@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    providers::PROVIDERS,
+    providers::general::PROVIDERS,
     requirements::{
         errors::CheckableError, general::token::ERC20_ABI, utils::check_if_in_range, Checkable,
     },
