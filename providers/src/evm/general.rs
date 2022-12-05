@@ -1,12 +1,11 @@
-use crate::{
-    address,
-    providers::BalanceQuerier,
-    requirements::errors::CheckableError,
-    types::{Address, Chain, U256},
-};
+use crate::{address, evm::Chain, BalanceQuerier};
 use async_trait::async_trait;
 use std::{collections::HashMap, sync::Arc};
-use web3::{transports::Http, Web3};
+use web3::{
+    transports::Http,
+    types::{Address, U256},
+    Web3,
+};
 
 type Balance = f64;
 
@@ -32,13 +31,29 @@ impl Provider {
     }
 }
 
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ProviderError {
+    #[error("Missing field `{0}`")]
+    MissingField(String),
+    #[error("Chain `{0}` is not supported")]
+    NoSuchChain(String),
+    #[error("No address attached to user `{0}`")]
+    MissingUserAddress(String),
+    #[error("No address attached to requirement `id: {0}`")]
+    MissingTokenAddress(String),
+    #[error("{0}")]
+    Web3ContractError(#[from] web3::contract::Error),
+}
+
 #[async_trait]
 impl BalanceQuerier for Provider {
     type Address = Address;
     type Id = U256;
     type Balance = Balance;
     type Chain = Chain;
-    type Error = CheckableError;
+    type Error = ProviderError;
 
     async fn get_native_balance(
         user: Self::Address,

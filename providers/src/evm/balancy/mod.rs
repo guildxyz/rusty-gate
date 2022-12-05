@@ -1,11 +1,13 @@
+mod types;
+
 use crate::{
-    providers::BalanceQuerier,
-    requirements::errors::CheckableError,
-    types::{Address, AddressTokenResponse, BalancyError, Chain, TokenType, U256},
+    evm::balancy::types::{AddressTokenResponse, BalancyError, TokenType},
+    evm::Chain,
+    BalanceQuerier,
 };
 use async_trait::async_trait;
 use std::collections::HashMap;
-
+use web3::types::{Address, U256};
 type Balance = f64;
 
 // Balancy
@@ -139,11 +141,12 @@ pub async fn get_erc1155_balance(
 mod test {
     use crate::{
         address,
-        providers::balancy::{
+        evm::balancy::{
             get_address_tokens, get_erc1155_balance, get_erc20_balance, get_erc721_balance, Balance,
         },
-        types::{Chain, U256},
+        evm::Chain,
     };
+    use web3::types::U256;
 
     #[tokio::test]
     async fn balancy_address_tokens() {
@@ -211,7 +214,7 @@ impl BalanceQuerier for BalancyProvider {
     type Id = U256;
     type Balance = Balance;
     type Chain = Chain;
-    type Error = CheckableError;
+    type Error = BalancyError;
 
     async fn get_native_balance(
         user: Self::Address,

@@ -1,6 +1,5 @@
 #![deny(clippy::dbg_macro)]
 
-pub mod providers;
 pub mod requirements;
 pub mod types;
 mod utils;

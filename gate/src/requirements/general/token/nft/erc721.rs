@@ -1,5 +1,4 @@
 use crate::{
-    providers::general::PROVIDERS,
     requirements::{
         errors::CheckableError,
         general::token::{nft::NftData, ERC721_ABI},
@@ -12,6 +11,7 @@ use crate::{
     },
 };
 use async_trait::async_trait;
+use providers::evm::general::PROVIDERS;
 use web3::contract::Options;
 
 pub struct Erc721Requirement {

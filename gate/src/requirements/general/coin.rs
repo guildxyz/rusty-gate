@@ -1,10 +1,10 @@
 use crate::{
-    providers::general::PROVIDERS,
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
     types::{Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
 };
 use anyhow::Result;
 use async_trait::async_trait;
+use providers::evm::general::PROVIDERS;
 
 pub struct CoinRequirement {
     id: NumberId,

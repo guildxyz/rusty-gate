@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::{
-    providers::general::PROVIDERS,
     requirements::{
         errors::CheckableError, general::token::ERC20_ABI, utils::check_if_in_range, Checkable,
     },
@@ -11,6 +10,7 @@ use crate::{
     },
 };
 use async_trait::async_trait;
+use providers::evm::general::PROVIDERS;
 use web3::contract::Options;
 
 pub struct Erc20Requirement {

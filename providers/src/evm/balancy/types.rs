@@ -1,9 +1,7 @@
-use crate::{
-    types::{Address, U256},
-    utils::u256_from_str,
-};
+use crate::evm::u256_from_str;
 use serde::Deserialize;
 use thiserror::Error;
+use web3::types::{Address, U256};
 
 #[derive(Error, Debug)]
 pub enum BalancyError {

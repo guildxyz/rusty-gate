@@ -1,5 +1,4 @@
-pub mod balancy;
-pub mod general;
+pub mod evm;
 
 use async_trait::async_trait;
 
@@ -15,17 +14,20 @@ pub trait BalanceQuerier {
         user: Self::Address,
         chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error>;
+
     async fn get_fungible_balance(
         user_address: Self::Address,
         token_address: Self::Address,
         chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error>;
+
     async fn get_non_fungible_balance(
         user_address: Self::Address,
         token_address: Self::Address,
         token_id: Option<Self::Id>,
         chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error>;
+
     async fn get_special_balance(
         user: Self::Address,
         token: Self::Address,
