@@ -35,17 +35,14 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProviderError {
-    #[error("Missing field `{0}`")]
-    MissingField(String),
-    #[error("Chain `{0}` is not supported")]
-    NoSuchChain(String),
-    #[error("No address attached to user `{0}`")]
-    MissingUserAddress(String),
-    #[error("No address attached to requirement `id: {0}`")]
-    MissingTokenAddress(String),
-    #[error("{0}")]
-    Web3ContractError(#[from] web3::contract::Error),
+    #[error(transparent)]
+    Web3Contract(#[from] web3::contract::Error),
+    #[error(transparent)]
+    Web3(#[from] web3::Error),
 }
+
+const DECIMALS: u32 = 18;
+const DIVISOR: Balance = 10_u128.pow(DECIMALS) as Balance;
 
 #[async_trait]
 impl BalanceQuerier for Provider {
@@ -56,35 +53,43 @@ impl BalanceQuerier for Provider {
     type Error = ProviderError;
 
     async fn get_native_balance(
-        chain: Self::Chain,
-        user_address: Self::Address,
-    ) -> Result<Self::Balance, Self::Error> {
-        todo!()
+        &self,
+        user_addresses: &[Self::Address],
+    ) -> Vec<Result<Self::Balance, Self::Error>> {
+        futures::future::join_all(user_addresses.iter().map(|ua| async {
+            self.single
+                .eth()
+                .balance(*ua, None)
+                .await
+                .map_err(ProviderError::Web3)
+                .map(|v| v.as_u128() as Balance / DIVISOR)
+        }))
+        .await
     }
 
     async fn get_fungible_balance(
-        chain: Self::Chain,
+        &self,
         user_address: Self::Address,
-        token_address: Self::Address,
-    ) -> Result<Self::Balance, Self::Error> {
+        user_addresses: &[Self::Address],
+    ) -> Vec<Result<Self::Balance, Self::Error>> {
         todo!()
     }
 
     async fn get_non_fungible_balance(
-        chain: Self::Chain,
+        &self,
         token_address: Self::Address,
         token_id: Option<Self::Id>,
-        user_address: Self::Address,
-    ) -> Result<Self::Balance, Self::Error> {
+        user_addresses: &[Self::Address],
+    ) -> Vec<Result<Self::Balance, Self::Error>> {
         todo!()
     }
 
     async fn get_special_balance(
-        chain: Self::Chain,
+        &self,
         token_address: Self::Address,
         token_id: Self::Id,
-        user_address: Self::Address,
-    ) -> Result<Self::Balance, Self::Error> {
+        user_addresses: &[Self::Address],
+    ) -> Vec<Result<Self::Balance, Self::Error>> {
         todo!()
     }
 }
