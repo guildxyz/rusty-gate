@@ -1,6 +1,6 @@
 use crate::{
     requirements::{errors::CheckableError, Checkable},
-    types::{Address, Amount, NumberId, ReqUserAccess, Requirement, User, UserAddress},
+    types::{Address, Amount, NumberId, ReqUserAccess, Requirement, User},
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -19,18 +19,13 @@ impl Checkable for AllowListRequirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
         users
             .iter()
-            .flat_map(|u| {
-                u.addresses.iter().cloned().map(|address| UserAddress {
-                    user_id: u.id,
-                    address,
-                })
-            })
-            .map(|ua| {
-                let access = self.data.addresses.contains(&ua.address);
+            .flat_map(|u| u.addresses.iter().cloned().map(|address| (u.id, address)))
+            .map(|(user_id, address)| {
+                let access = self.data.addresses.contains(&address);
 
                 ReqUserAccess {
                     requirement_id: self.id,
-                    user_id: ua.user_id,
+                    user_id,
                     access: Some(access),
                     amount: Some(access as i8 as Amount),
                     warning: None,

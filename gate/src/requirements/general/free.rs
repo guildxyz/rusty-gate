@@ -1,6 +1,6 @@
 use crate::{
     requirements::{errors::CheckableError, Checkable},
-    types::{NumberId, ReqUserAccess, Requirement, User, UserAddress},
+    types::{NumberId, ReqUserAccess, Requirement, User},
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -14,15 +14,10 @@ impl Checkable for FreeRequirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
         users
             .iter()
-            .flat_map(|u| {
-                u.addresses.iter().cloned().map(|address| UserAddress {
-                    user_id: u.id,
-                    address,
-                })
-            })
-            .map(|ua| ReqUserAccess {
+            .flat_map(|u| u.addresses.iter().cloned().map(|address| (u.id, address)))
+            .map(|(user_id, _)| ReqUserAccess {
                 requirement_id: self.id,
-                user_id: ua.user_id,
+                user_id,
                 access: Some(true),
                 amount: Some(1.0),
                 warning: None,
