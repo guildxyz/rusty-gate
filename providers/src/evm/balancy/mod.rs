@@ -52,7 +52,7 @@ pub async fn get_address_tokens(
                 StatusCode::OK => Ok(res.json::<AddressTokenResponse>().await?),
                 StatusCode::BAD_REQUEST => Err(BalancyError::InvalidBalancyRequest),
                 StatusCode::TOO_MANY_REQUESTS => Err(BalancyError::TooManyRequests),
-                _ => Err(BalancyError::UnknownError(status.as_u16())),
+                _ => Err(BalancyError::Unknown(status.as_u16())),
             }
         }
     }

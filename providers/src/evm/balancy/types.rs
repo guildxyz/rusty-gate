@@ -14,9 +14,9 @@ pub enum BalancyError {
     #[error("Too many requests to Balancy")]
     TooManyRequests,
     #[error(transparent)]
-    Other(#[from] reqwest::Error),
+    Reqwest(#[from] reqwest::Error),
     #[error("Got response with status code `{0}`")]
-    UnknownError(u16),
+    Unknown(u16),
 }
 
 #[derive(Deserialize, Debug)]
