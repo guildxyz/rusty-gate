@@ -1,6 +1,6 @@
 use crate::{
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
-    types::{Address, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User},
+    types::{Address, AmountLimits, EvmChain, NumberId, ReqUserAccess, Requirement, User},
 };
 use async_trait::async_trait;
 use providers::{evm::general::PROVIDERS, BalanceQuerier};
@@ -9,7 +9,7 @@ pub struct Erc20Requirement {
     id: NumberId,
     address: Address,
     data: Option<AmountLimits>,
-    chain: Chain,
+    chain: EvmChain,
 }
 
 #[async_trait]
@@ -115,7 +115,7 @@ mod test {
     use crate::{
         address,
         requirements::{general::token::erc20::Erc20Requirement, Checkable},
-        types::{AmountLimits, Chain, User},
+        types::{AmountLimits, EvmChain, User},
     };
 
     #[tokio::test]
@@ -136,7 +136,7 @@ mod test {
 
         let req = Erc20Requirement {
             id: 0,
-            chain: Chain::Goerli,
+            chain: EvmChain::Goerli,
             address: address!("0x3C65D35A8190294d39013287B246117eBf6615Bd"),
             data: Some(AmountLimits {
                 min_amount: Some(420.69),

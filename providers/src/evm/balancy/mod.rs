@@ -1,13 +1,15 @@
 pub mod types;
 
 use crate::{
-    evm::balancy::types::{AddressTokenResponse, BalancyError},
-    evm::Chain,
+    evm::{
+        balancy::types::{AddressTokenResponse, BalancyError},
+        EvmChain,
+    },
+    Address, U256,
 };
 use reqwest::StatusCode;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
-use web3::types::{Address, U256};
 
 // Balancy
 const BASE_URL: &str = "https://balancy.guild.xyz/api";
@@ -20,17 +22,17 @@ lazy_static::lazy_static! {
     static ref CHAIN_IDS: HashMap<u32, u32> = {
         let mut h = HashMap::new();
 
-        h.insert(Chain::Ethereum as u32, 1);
-        h.insert(Chain::Bsc as u32, 56);
-        h.insert(Chain::Gnosis as u32, 100);
-        h.insert(Chain::Polygon as u32, 137);
+        h.insert(EvmChain::Ethereum as u32, 1);
+        h.insert(EvmChain::Bsc as u32, 56);
+        h.insert(EvmChain::Gnosis as u32, 100);
+        h.insert(EvmChain::Polygon as u32, 137);
 
         h
     };
 }
 
 pub async fn get_address_tokens(
-    chain: Chain,
+    chain: EvmChain,
     address: Address,
 ) -> Result<AddressTokenResponse, BalancyError> {
     match CHAIN_IDS.get(&(chain as u32)) {
@@ -62,7 +64,7 @@ pub struct BalancyProvider;
 
 impl BalancyProvider {
     pub async fn get_total_erc1155_of_address(
-        chain: Chain,
+        chain: EvmChain,
         token_address: Address,
         user_address: Address,
     ) -> Result<U256, BalancyError> {
@@ -85,14 +87,14 @@ mod test {
     use crate::{
         address,
         evm::balancy::{get_address_tokens, BalancyProvider},
-        evm::Chain,
+        evm::EvmChain,
     };
     use web3::types::U256;
 
     #[tokio::test]
     async fn balancy_address_tokens() {
         assert!(get_address_tokens(
-            Chain::Ethereum,
+            EvmChain::Ethereum,
             address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")
         )
         .await
@@ -103,7 +105,7 @@ mod test {
     async fn balancy_total_erc1155_of_address() {
         assert_eq!(
             BalancyProvider::get_total_erc1155_of_address(
-                Chain::Ethereum,
+                EvmChain::Ethereum,
                 address!("0x76be3b62873462d2142405439777e971754e8e77"),
                 address!("0x283d678711daa088640c86a1ad3f12c00ec1252e")
             )

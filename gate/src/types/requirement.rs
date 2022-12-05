@@ -9,10 +9,9 @@ use crate::{
         },
         Checkable,
     },
-    types::{Chain, NumberId, U256},
+    types::{Address, EvmChain, NumberId, U256},
 };
 use serde::{Deserialize, Serialize};
-pub use web3::types::Address;
 
 #[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -42,7 +41,7 @@ pub struct Requirement {
     pub typ: RequirementType,
     pub address: Option<Address>,
     pub data: Option<RequirementData>,
-    pub chain: Option<Chain>,
+    pub chain: Option<EvmChain>,
 }
 
 impl Requirement {

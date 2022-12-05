@@ -1,6 +1,6 @@
 use crate::{
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
-    types::{Address, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User},
+    types::{Address, AmountLimits, EvmChain, NumberId, ReqUserAccess, Requirement, User},
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -9,7 +9,7 @@ use providers::{evm::general::PROVIDERS, BalanceQuerier};
 pub struct CoinRequirement {
     id: NumberId,
     data: Option<AmountLimits>,
-    chain: Chain,
+    chain: EvmChain,
 }
 
 #[async_trait]
@@ -107,7 +107,7 @@ mod test {
     use crate::{
         address,
         requirements::{general::coin::CoinRequirement, Checkable},
-        types::{AmountLimits, Chain, User},
+        types::{AmountLimits, EvmChain, User},
     };
 
     #[tokio::test]
@@ -128,7 +128,7 @@ mod test {
 
         let req = CoinRequirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: EvmChain::Ethereum,
             data: Some(AmountLimits {
                 min_amount: Some(0.0004),
                 max_amount: None,

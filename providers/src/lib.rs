@@ -2,6 +2,9 @@ pub mod evm;
 
 use async_trait::async_trait;
 
+pub use evm::EvmChain;
+pub use web3::types::{Address, U256};
+
 #[async_trait]
 pub trait BalanceQuerier {
     type Address;

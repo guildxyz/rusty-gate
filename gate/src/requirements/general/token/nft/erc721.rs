@@ -2,7 +2,7 @@ use crate::{
     requirements::{
         errors::CheckableError, general::token::nft::NftData, utils::check_if_in_range, Checkable,
     },
-    types::{Address, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User},
+    types::{Address, AmountLimits, EvmChain, NumberId, ReqUserAccess, Requirement, User},
 };
 use async_trait::async_trait;
 use providers::{evm::general::PROVIDERS, BalanceQuerier};
@@ -11,7 +11,7 @@ pub struct Erc721Requirement {
     id: NumberId,
     address: Address,
     data: NftData,
-    chain: Chain,
+    chain: EvmChain,
 }
 
 #[async_trait]
@@ -129,7 +129,7 @@ mod test {
             general::token::nft::erc721::{Erc721Requirement, NftData},
             Checkable,
         },
-        types::{Chain, User, U256},
+        types::{EvmChain, User, U256},
     };
 
     #[tokio::test]
@@ -150,7 +150,7 @@ mod test {
 
         let req1 = Erc721Requirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: EvmChain::Ethereum,
             address: address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
             data: NftData {
                 id: Some(U256::from_dec_str(
@@ -163,7 +163,7 @@ mod test {
 
         let req2 = Erc721Requirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: EvmChain::Ethereum,
             address: address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
             data: NftData {
                 id: None,
