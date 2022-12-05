@@ -11,27 +11,27 @@ pub trait BalanceQuerier {
     type Error;
 
     async fn get_native_balance(
-        user: Self::Address,
         chain: Self::Chain,
+        user: Self::Address,
     ) -> Result<Self::Balance, Self::Error>;
 
     async fn get_fungible_balance(
-        user_address: Self::Address,
-        token_address: Self::Address,
         chain: Self::Chain,
+        token_address: Self::Address,
+        user_address: Self::Address,
     ) -> Result<Self::Balance, Self::Error>;
 
     async fn get_non_fungible_balance(
-        user_address: Self::Address,
+        chain: Self::Chain,
         token_address: Self::Address,
         token_id: Option<Self::Id>,
-        chain: Self::Chain,
+        user_address: Self::Address,
     ) -> Result<Self::Balance, Self::Error>;
 
     async fn get_special_balance(
-        user_address: Self::Address,
+        chain: Self::Chain,
         token_address: Self::Address,
         token_id: Self::Id,
-        chain: Self::Chain,
+        user_address: Self::Address,
     ) -> Result<Self::Balance, Self::Error>;
 }
