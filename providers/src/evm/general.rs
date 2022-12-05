@@ -1,7 +1,9 @@
 use crate::{address, evm::Chain, BalanceQuerier};
 use async_trait::async_trait;
+use futures::future::join_all;
 use std::{collections::HashMap, sync::Arc};
 use web3::{
+    contract::{Contract, Options},
     transports::Http,
     types::{Address, U256},
     Web3,
@@ -33,6 +35,8 @@ impl Provider {
 
 use thiserror::Error;
 
+use super::ERC20_ABI;
+
 #[derive(Error, Debug)]
 pub enum ProviderError {
     #[error(transparent)]
@@ -56,7 +60,7 @@ impl BalanceQuerier for Provider {
         &self,
         user_addresses: &[Self::Address],
     ) -> Vec<Result<Self::Balance, Self::Error>> {
-        futures::future::join_all(user_addresses.iter().map(|ua| async {
+        join_all(user_addresses.iter().map(|ua| async {
             self.single
                 .eth()
                 .balance(*ua, None)
@@ -69,10 +73,27 @@ impl BalanceQuerier for Provider {
 
     async fn get_fungible_balance(
         &self,
-        user_address: Self::Address,
+        token_address: Self::Address,
         user_addresses: &[Self::Address],
     ) -> Vec<Result<Self::Balance, Self::Error>> {
-        todo!()
+        let contract =
+            Arc::new(Contract::from_json(self.single.eth(), token_address, ERC20_ABI).unwrap());
+
+        let decimals: u8 = contract
+            .query("decimals", (), None, Options::default(), None)
+            .await
+            .unwrap();
+
+        join_all(user_addresses.iter().map(|ua| async {
+            let contract = Arc::clone(&contract);
+
+            contract
+                .query("balanceOf", (*ua,), None, Options::default(), None)
+                .await
+                .map_err(ProviderError::Web3Contract)
+                .map(|v: U256| v.as_u128() as Balance / 10_u128.pow(decimals as u32) as Balance)
+        }))
+        .await
     }
 
     async fn get_non_fungible_balance(

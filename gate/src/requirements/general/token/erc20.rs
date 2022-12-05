@@ -1,17 +1,9 @@
-use std::sync::Arc;
-
 use crate::{
-    requirements::{
-        errors::CheckableError, general::token::ERC20_ABI, utils::check_if_in_range, Checkable,
-    },
-    types::{
-        Address, Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User,
-        UserAddress, U256,
-    },
+    requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
+    types::{Address, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User},
 };
 use async_trait::async_trait;
-use providers::evm::general::PROVIDERS;
-use web3::contract::Options;
+use providers::{evm::general::PROVIDERS, BalanceQuerier};
 
 pub struct Erc20Requirement {
     id: NumberId,
@@ -23,14 +15,9 @@ pub struct Erc20Requirement {
 #[async_trait]
 impl Checkable for Erc20Requirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
-        let user_addresses: Vec<UserAddress> = users
+        let user_addresses: Vec<Address> = users
             .iter()
-            .flat_map(|u| {
-                u.addresses.iter().cloned().map(|address| UserAddress {
-                    user_id: u.id,
-                    address,
-                })
-            })
+            .flat_map(|u| u.addresses.iter().cloned())
             .collect();
 
         if user_addresses.is_empty() {
@@ -51,51 +38,44 @@ impl Checkable for Erc20Requirement {
             .get(&(self.chain as u8))
             .expect("This should be fine");
 
-        let contract = Arc::new(
-            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC20_ABI)
-                .unwrap(),
-        );
-
-        let decimals: u8 = contract
-            .query("decimals", (), None, Options::default(), None)
+        provider
+            .get_fungible_balance(self.address, &user_addresses)
             .await
-            .unwrap();
+            .iter()
+            .enumerate()
+            .map(|(idx, b)| {
+                let mut error = None;
+                let mut amount = None;
 
-        futures::future::join_all(user_addresses.iter().map(|ua| async {
-            let mut error = None;
-            let mut amount = None;
+                match b {
+                    Ok(v) => amount = Some(*v),
+                    Err(e) => error = Some(e.to_string()),
+                };
 
-            let contract = Arc::clone(&contract);
+                let user_id = users
+                    .iter()
+                    .find(|u| u.addresses.contains(&user_addresses[idx]))
+                    .unwrap()
+                    .id;
 
-            let response: Result<U256, web3::contract::Error> = contract
-                .query("balanceOf", (ua.address,), None, Options::default(), None)
-                .await;
-
-            match response {
-                Ok(r) => {
-                    amount = Some(r.as_u128() as Amount / 10_u128.pow(decimals as u32) as Amount)
+                ReqUserAccess {
+                    requirement_id: self.id,
+                    user_id,
+                    access: if error.is_none() {
+                        Some(check_if_in_range(
+                            amount.expect("This should be fine"),
+                            &self.data,
+                            false,
+                        ))
+                    } else {
+                        None
+                    },
+                    amount: if error.is_none() { amount } else { None },
+                    warning: None,
+                    error,
                 }
-                Err(e) => error = Some(e.to_string()),
-            }
-
-            ReqUserAccess {
-                requirement_id: self.id,
-                user_id: ua.user_id,
-                access: if error.is_none() {
-                    Some(check_if_in_range(
-                        amount.expect("This should be fine"),
-                        &self.data,
-                        false,
-                    ))
-                } else {
-                    None
-                },
-                amount: if error.is_none() { amount } else { None },
-                warning: None,
-                error,
-            }
-        }))
-        .await
+            })
+            .collect()
     }
 }
 

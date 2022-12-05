@@ -6,6 +6,10 @@ pub use general::Provider;
 use serde::{de::Error, Deserialize, Deserializer};
 use web3::types::U256;
 
+pub const ERC20_ABI: &[u8] = include_bytes!("../../../abi/ERC20.json");
+pub const ERC721_ABI: &[u8] = include_bytes!("../../../abi/ERC721.json");
+pub const ERC1155_ABI: &[u8] = include_bytes!("../../../abi/ERC1155.json");
+
 #[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Chain {
