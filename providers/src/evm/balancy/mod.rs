@@ -4,6 +4,7 @@ use crate::{
     evm::balancy::types::{AddressTokenResponse, BalancyError},
     evm::Chain,
 };
+use reqwest::StatusCode;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 use web3::types::{Address, U256};
@@ -35,7 +36,7 @@ pub async fn get_address_tokens(
     match CHAIN_IDS.get(&(chain as u32)) {
         None => Err(BalancyError::ChainNotSupported(format!("{:?}", chain))),
         Some(id) => {
-            let body: AddressTokenResponse = CLIENT
+            let res = CLIENT
                 .read()
                 .await
                 .get(format!(
@@ -43,11 +44,16 @@ pub async fn get_address_tokens(
                     address
                 ))
                 .send()
-                .await?
-                .json()
                 .await?;
 
-            Ok(body)
+            let status = res.status();
+
+            match status {
+                StatusCode::OK => Ok(res.json::<AddressTokenResponse>().await?),
+                StatusCode::BAD_REQUEST => Err(BalancyError::InvalidBalancyRequest),
+                StatusCode::TOO_MANY_REQUESTS => Err(BalancyError::TooManyRequests),
+                _ => Err(BalancyError::UnknownError(status.as_u16())),
+            }
         }
     }
 }

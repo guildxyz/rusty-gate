@@ -9,8 +9,14 @@ pub enum BalancyError {
     ChainNotSupported(String),
     #[error("User doesn't have token associated with address `{0}`")]
     NoSuchTokenInWallet(Address),
-    #[error("{0}")]
-    RequestFailed(#[from] reqwest::Error),
+    #[error("Invalid Balancy request")]
+    InvalidBalancyRequest,
+    #[error("Too many requests to Balancy")]
+    TooManyRequests,
+    #[error(transparent)]
+    Other(#[from] reqwest::Error),
+    #[error("Got response with status code `{0}`")]
+    UnknownError(u16),
 }
 
 #[derive(Deserialize, Debug)]
