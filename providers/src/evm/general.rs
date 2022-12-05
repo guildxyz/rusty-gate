@@ -1,4 +1,8 @@
-use crate::{address, evm::Chain, BalanceQuerier};
+use crate::{
+    address,
+    evm::{Chain, ERC1155_ABI, ERC20_ABI, ERC721_ABI},
+    BalanceQuerier,
+};
 use async_trait::async_trait;
 use futures::future::join_all;
 use std::{collections::HashMap, sync::Arc};
@@ -34,8 +38,6 @@ impl Provider {
 }
 
 use thiserror::Error;
-
-use super::ERC20_ABI;
 
 #[derive(Error, Debug)]
 pub enum ProviderError {
@@ -102,7 +104,39 @@ impl BalanceQuerier for Provider {
         token_id: Option<Self::Id>,
         user_addresses: &[Self::Address],
     ) -> Vec<Result<Self::Balance, Self::Error>> {
-        todo!()
+        let contract =
+            Arc::new(Contract::from_json(self.single.eth(), token_address, ERC721_ABI).unwrap());
+
+        join_all(user_addresses.iter().map(|ua| async {
+            let contract = Arc::clone(&contract);
+
+            let response: Result<U256, web3::contract::Error> = match token_id {
+                Some(id) => {
+                    let owner_res: Result<Address, web3::contract::Error> = contract
+                        .clone()
+                        .query("ownerOf", (id,), None, Options::default(), None)
+                        .await;
+
+                    let res = match owner_res {
+                        Ok(owner) => i32::from(owner == *ua).into(),
+                        Err(_) => 0.into(),
+                    };
+
+                    Ok(res)
+                }
+                None => {
+                    contract
+                        .clone()
+                        .query("balanceOf", (*ua,), None, Options::default(), None)
+                        .await
+                }
+            };
+
+            response
+                .map_err(ProviderError::Web3Contract)
+                .map(|v: U256| v.as_u128() as Balance)
+        }))
+        .await
     }
 
     async fn get_special_balance(
