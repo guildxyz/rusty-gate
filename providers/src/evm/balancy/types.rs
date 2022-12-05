@@ -13,13 +13,6 @@ pub enum BalancyError {
     RequestFailed(#[from] reqwest::Error),
 }
 
-pub enum TokenType {
-    Native,
-    Erc20 { address: Address },
-    Erc721 { address: Address, id: Option<U256> },
-    Erc1155 { address: Address, id: U256 },
-}
-
 #[derive(Deserialize, Debug)]
 pub struct Erc20 {
     pub address: Address,
