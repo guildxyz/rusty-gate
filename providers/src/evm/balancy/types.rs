@@ -16,7 +16,7 @@ pub enum BalancyError {
 pub enum TokenType {
     Native,
     Erc20 { address: Address },
-    Erc721 { address: Address, id: U256 },
+    Erc721 { address: Address, id: Option<U256> },
     Erc1155 { address: Address, id: U256 },
 }
 

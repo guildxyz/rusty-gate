@@ -29,8 +29,8 @@ pub trait BalanceQuerier {
     ) -> Result<Self::Balance, Self::Error>;
 
     async fn get_special_balance(
-        user: Self::Address,
-        token: Self::Address,
+        user_address: Self::Address,
+        token_address: Self::Address,
         token_id: Self::Id,
         chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error>;

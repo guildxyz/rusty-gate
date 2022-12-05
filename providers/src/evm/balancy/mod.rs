@@ -64,11 +64,13 @@ pub async fn get_erc_amount(
             .find(|i| i.address == address)
             .map(|token| token.amount)
             .unwrap_or_default(),
-        Erc721 { address, id } => u128::from(
-            body.erc721
-                .iter()
-                .any(|i| i.address == address && i.token_id == id),
-        )
+        Erc721 { address, id } => u128::from(body.erc721.iter().any(|i| {
+            i.address == address
+                && match id {
+                    Some(id) => id == i.token_id,
+                    None => true,
+                }
+        }))
         .into(),
         Erc1155 { address, id } => body
             .erc1155
@@ -102,7 +104,7 @@ pub async fn get_erc20_balance(
 pub async fn get_erc721_balance(
     chain: Chain,
     token_address: Address,
-    token_id: U256,
+    token_id: Option<U256>,
     user_address: Address,
 ) -> Result<Balance, BalancyError> {
     let balance = get_erc_amount(
@@ -178,10 +180,10 @@ mod test {
             get_erc721_balance(
                 Chain::Ethereum,
                 address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
-                U256::from_dec_str(
+                Some(U256::from_dec_str(
                     "61313325075603536901663283754390960556726744542208800735045237225934362163454"
                 )
-                .unwrap(),
+                .unwrap()),
                 address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")
             )
             .await
@@ -217,8 +219,8 @@ impl BalanceQuerier for BalancyProvider {
     type Error = BalancyError;
 
     async fn get_native_balance(
-        user: Self::Address,
-        chain: Self::Chain,
+        _user: Self::Address,
+        _chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error> {
         todo!()
     }
@@ -228,7 +230,7 @@ impl BalanceQuerier for BalancyProvider {
         token_address: Self::Address,
         chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error> {
-        todo!()
+        get_erc20_balance(chain, token_address, user_address).await
     }
 
     async fn get_non_fungible_balance(
@@ -237,15 +239,15 @@ impl BalanceQuerier for BalancyProvider {
         token_id: Option<Self::Id>,
         chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error> {
-        todo!()
+        get_erc721_balance(chain, token_address, token_id, user_address).await
     }
 
     async fn get_special_balance(
-        user: Self::Address,
-        token: Self::Address,
+        user_address: Self::Address,
+        token_address: Self::Address,
         token_id: Self::Id,
         chain: Self::Chain,
     ) -> Result<Self::Balance, Self::Error> {
-        todo!()
+        get_erc1155_balance(chain, token_address, token_id, user_address).await
     }
 }
