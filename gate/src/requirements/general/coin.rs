@@ -2,7 +2,6 @@ use crate::{
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
     types::{Address, AmountLimits, EvmChain, NumberId, ReqUserAccess, Requirement, User},
 };
-use anyhow::Result;
 use async_trait::async_trait;
 use providers::{evm::general::PROVIDERS, BalanceQuerier};
 

@@ -2,7 +2,6 @@ use crate::{
     requirements::{errors::CheckableError, Checkable},
     types::{Address, Amount, NumberId, ReqUserAccess, Requirement, User},
 };
-use anyhow::Result;
 use async_trait::async_trait;
 
 struct AllowlistData {
