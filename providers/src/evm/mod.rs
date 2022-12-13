@@ -4,13 +4,13 @@ pub mod general;
 use crate::U256;
 pub use balancy::BalancyProvider;
 pub use general::Provider;
-use serde::{de::Error, Deserialize, Deserializer};
+use serde::{de::Error, Deserialize, Deserializer, Serialize};
 
 pub const ERC20_ABI: &[u8] = include_bytes!("../../../abi/ERC20.json");
 pub const ERC721_ABI: &[u8] = include_bytes!("../../../abi/ERC721.json");
 pub const ERC1155_ABI: &[u8] = include_bytes!("../../../abi/ERC1155.json");
 
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum EvmChain {
     Ethereum,
