@@ -134,8 +134,6 @@ mod test {
 
     #[tokio::test]
     async fn erc721_check() {
-        dotenv::dotenv().ok();
-
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],

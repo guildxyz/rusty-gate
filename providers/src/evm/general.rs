@@ -209,6 +209,8 @@ macro_rules! dotenv {
 
 lazy_static::lazy_static! {
     pub static ref PROVIDERS: Arc<HashMap<u8, Provider>> = Arc::new({
+        dotenv::dotenv().ok();
+
         let mut providers = HashMap::new();
 
         providers.insert(

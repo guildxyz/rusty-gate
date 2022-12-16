@@ -140,8 +140,6 @@ mod test {
 
     #[tokio::test]
     async fn erc1155_check() {
-        dotenv::dotenv().ok();
-
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0x283d678711daa088640c86a1ad3f12c00ec1252e")],
@@ -161,7 +159,7 @@ mod test {
             data: NftData {
                 id: Some(U256::from_dec_str("10527").unwrap()),
                 limits: Some(AmountLimits {
-                    min_amount: Some(595.0),
+                    min_amount: Some(4.0),
                     max_amount: None,
                 }),
             },
@@ -171,7 +169,10 @@ mod test {
             req.check(&users_1)
                 .await
                 .iter()
-                .map(|a| a.access.unwrap_or_default())
+                .map(|a| {
+                    dbg!(a.amount);
+                    a.access.unwrap_or_default()
+                })
                 .collect::<Vec<bool>>(),
             vec![true]
         );

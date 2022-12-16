@@ -120,8 +120,6 @@ mod test {
 
     #[tokio::test]
     async fn erc20_check() {
-        dotenv::dotenv().ok();
-
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0x14DDFE8EA7FFc338015627D160ccAf99e8F16Dd3")],

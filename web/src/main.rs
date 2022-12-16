@@ -29,8 +29,6 @@ struct Opt {
 
 #[tokio::main]
 async fn main() -> ! {
-    dotenv::dotenv().ok();
-
     let opt = Opt::from_args();
 
     Builder::from_env(Env::default().default_filter_or(opt.log)).init();
