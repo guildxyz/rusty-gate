@@ -14,6 +14,24 @@ use web3::{
     transports::Http,
     Web3,
 };
+const ETHEREUM_RPC: &str = "https://eth-mainnet.g.alchemy.com/v2/";
+const POLYGON_RPC: &str = "https://polygon-mainnet.g.alchemy.com/v2/";
+const BSC_RPC: &str = "https://bsc-dataseed.binance.org/";
+const AVALANCHE_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
+const FANTOM_RPC: &str = "https://rpc.ftm.tools/";
+const GOERLI_RPC: &str = "https://eth-goerli.g.alchemy.com/v2/";
+const HECO_RPC: &str = "https://http-mainnet.hecochain.com";
+const ARBITRUM_RPC: &str = "https://arb-mainnet.g.alchemy.com/v2/";
+const CELO_RPC: &str = "https://forno.celo.org";
+const HARMONY_RPC: &str = "https://api.harmony.one/";
+const OPTIMISM_RPC: &str = "https://optimism-mainnet.public.blastapi.io";
+const MOONRIVER_RPC: &str = "https://moonriver.api.onfinality.io/public";
+const GNOSIS_RPC: &str = "https://rpc.gnosischain.com/";
+const PALM_RPC: &str = "https://palm-mainnet.infura.io/v3/";
+const RINKEBY_RPC: &str = "https://rpc.ankr.com/eth_rinkeby";
+const METIS_RPC: &str = "https://andromeda.metis.io/?owner=";
+const CRONOS_RPC: &str = "https://evm-cronos.crypto.org";
+const BOBA_RPC: &str = "https://mainnet.boba.network";
 
 type Balance = f64;
 
@@ -217,7 +235,7 @@ lazy_static::lazy_static! {
             EvmChain::Ethereum as u8,
             Provider::new(
                 EvmChain::Ethereum,
-                dotenv!("ETHEREUM_RPC"),
+                format!("{}{}", ETHEREUM_RPC, dotenv!("ETHEREUM_RPC_TOKEN")),
                 address!("0x5ba1e12693dc8f9c48aad8770482f4739beed696")
             )
         );
@@ -225,7 +243,7 @@ lazy_static::lazy_static! {
             EvmChain::Polygon as u8,
             Provider::new(
                 EvmChain::Polygon,
-                dotenv!("POLYGON_RPC"),
+                format!("{}{}", POLYGON_RPC, dotenv!("POLYGON_RPC_TOKEN")),
                 address!("0x11ce4B23bD875D7F5C6a31084f55fDe1e9A87507")
             )
         );
@@ -233,7 +251,7 @@ lazy_static::lazy_static! {
             EvmChain::Bsc as u8,
             Provider::new(
                 EvmChain::Bsc,
-                dotenv!("BSC_RPC"),
+                BSC_RPC.to_string(),
                 address!("0x41263cba59eb80dc200f3e2544eda4ed6a90e76c")
             )
         );
@@ -241,7 +259,7 @@ lazy_static::lazy_static! {
             EvmChain::Gnosis as u8,
             Provider::new(
                 EvmChain::Gnosis,
-                dotenv!("GNOSIS_RPC"),
+                GNOSIS_RPC.to_string(),
                 address!("0xb5b692a88bdfc81ca69dcb1d924f59f0413a602a")
             )
         );
@@ -249,7 +267,7 @@ lazy_static::lazy_static! {
             EvmChain::Fantom as u8,
             Provider::new(
                 EvmChain::Fantom,
-                dotenv!("FANTOM_RPC"),
+                FANTOM_RPC.to_string(),
                 address!("0xD98e3dBE5950Ca8Ce5a4b59630a5652110403E5c")
             )
         );
@@ -257,7 +275,7 @@ lazy_static::lazy_static! {
             EvmChain::Avalanche as u8,
             Provider::new(
                 EvmChain::Avalanche,
-                dotenv!("AVALANCHE_RPC"),
+                AVALANCHE_RPC.to_string(),
                 address!("0x98e2060F672FD1656a07bc12D7253b5e41bF3876")
             )
         );
@@ -265,7 +283,7 @@ lazy_static::lazy_static! {
             EvmChain::Arbitrum as u8,
             Provider::new(
                 EvmChain::Arbitrum,
-                dotenv!("ARBITRUM_RPC"),
+                format!("{}{}", ARBITRUM_RPC, dotenv!("ARBITRUM_RPC_TOKEN")),
                 address!("0x52bfe8fE06c8197a8e3dCcE57cE012e13a7315EB")
             )
         );
@@ -273,7 +291,7 @@ lazy_static::lazy_static! {
             EvmChain::Celo as u8,
             Provider::new(
                 EvmChain::Celo,
-                dotenv!("CELO_RPC"),
+                CELO_RPC.to_string(),
                 address!("0xb74C3A8108F1534Fc0D9b776A9B487c84fe8eD06")
             )
         );
@@ -281,7 +299,7 @@ lazy_static::lazy_static! {
             EvmChain::Harmony as u8,
             Provider::new(
                 EvmChain::Harmony,
-                dotenv!("HARMONY_RPC"),
+                HARMONY_RPC.to_string(),
                 address!("0x34b415f4d3b332515e66f70595ace1dcf36254c5")
             )
         );
@@ -289,7 +307,7 @@ lazy_static::lazy_static! {
             EvmChain::Heco as u8,
             Provider::new(
                 EvmChain::Heco,
-                dotenv!("HECO_RPC"),
+                HECO_RPC.to_string(),
                 address!("0x41C0A3059De6bE4f1913630db94d93aB5a2904B4")
             )
         );
@@ -297,7 +315,7 @@ lazy_static::lazy_static! {
             EvmChain::Goerli as u8,
             Provider::new(
                 EvmChain::Goerli,
-                dotenv!("GOERLI_RPC"),
+                format!("{}{}", GOERLI_RPC, dotenv!("GOERLI_RPC_TOKEN")),
                 address!("0x77dCa2C955b15e9dE4dbBCf1246B4B85b651e50e")
             )
         );
@@ -305,7 +323,7 @@ lazy_static::lazy_static! {
             EvmChain::Optimism as u8,
             Provider::new(
                 EvmChain::Optimism,
-                dotenv!("OPTIMISM_RPC"),
+                OPTIMISM_RPC.to_string(),
                 address!("0x2DC0E2aa608532Da689e89e237dF582B783E552C")
             )
         );
@@ -313,7 +331,7 @@ lazy_static::lazy_static! {
             EvmChain::Moonriver as u8,
             Provider::new(
                 EvmChain::Moonriver,
-                dotenv!("MOONRIVER_RPC"),
+                MOONRIVER_RPC.to_string(),
                 address!("0x270f2F35bED92B7A59eA5F08F6B3fd34c8D9D9b5")
             )
         );
@@ -321,7 +339,7 @@ lazy_static::lazy_static! {
             EvmChain::Rinkeby as u8,
             Provider::new(
                 EvmChain::Rinkeby,
-                dotenv!("RINKEBY_RPC"),
+                RINKEBY_RPC.to_string(),
                 address!("0x5ba1e12693dc8f9c48aad8770482f4739beed696")
             )
         );
@@ -329,7 +347,7 @@ lazy_static::lazy_static! {
             EvmChain::Metis as u8,
             Provider::new(
                 EvmChain::Metis,
-                dotenv!("METIS_RPC"),
+                format!("{}{}", METIS_RPC, dotenv!("METIS_RPC_TOKEN")),
                 address!("0x1a2AFb22B8A90A77a93e80ceA61f89D04e05b796")
             )
         );
@@ -337,7 +355,7 @@ lazy_static::lazy_static! {
             EvmChain::Cronos as u8,
             Provider::new(
                 EvmChain::Cronos,
-                dotenv!("CRONOS_RPC"),
+                CRONOS_RPC.to_string(),
                 address!("0x0fA4d452693F2f45D28c4EC4d20b236C4010dA74")
             )
         );
@@ -345,7 +363,7 @@ lazy_static::lazy_static! {
             EvmChain::Boba as u8,
             Provider::new(
                 EvmChain::Boba,
-                dotenv!("BOBA_RPC"),
+                BOBA_RPC.to_string(),
                 address!("0xbe2Be647F8aC42808E67431B4E1D6c19796bF586")
             )
         );
@@ -353,7 +371,7 @@ lazy_static::lazy_static! {
             EvmChain::Palm as u8,
             Provider::new(
                 EvmChain::Palm,
-                dotenv!("PALM_RPC"),
+                format!("{}{}", PALM_RPC, dotenv!("PALM_RPC_TOKEN")),
                 address!("0xfFE2FF36c5b8D948f788a34f867784828aa7415D")
             )
         );
