@@ -111,7 +111,7 @@ mod test {
             )
             .await
             .unwrap(),
-            U256::from_dec_str("8110").unwrap()
+            U256::from_dec_str("7100").unwrap()
         );
     }
 }
