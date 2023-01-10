@@ -1,37 +1,25 @@
 use crate::{
-    providers::PROVIDERS,
     requirements::{
-        errors::CheckableError,
-        general::token::{nft::NftData, ERC1155_ABI},
-        utils::check_if_in_range,
-        Checkable,
+        errors::CheckableError, general::token::nft::NftData, utils::check_if_in_range, Checkable,
     },
-    types::{
-        Address, Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User,
-        UserAddress, U256,
-    },
+    types::{Address, AmountLimits, EvmChain, NumberId, ReqUserAccess, Requirement, User},
 };
 use async_trait::async_trait;
-use web3::contract::Options;
+use providers::{evm::general::PROVIDERS, BalanceQuerier};
 
 pub struct Erc1155Requirement {
     id: NumberId,
     address: Address,
     data: NftData,
-    chain: Chain,
+    chain: EvmChain,
 }
 
 #[async_trait]
 impl Checkable for Erc1155Requirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
-        let user_addresses: Vec<UserAddress> = users
+        let user_addresses: Vec<Address> = users
             .iter()
-            .flat_map(|u| {
-                u.addresses.iter().cloned().map(|address| UserAddress {
-                    user_id: u.id,
-                    address,
-                })
-            })
+            .flat_map(|u| u.addresses.iter().cloned())
             .collect();
 
         if user_addresses.is_empty() {
@@ -52,55 +40,41 @@ impl Checkable for Erc1155Requirement {
             .get(&(self.chain as u8))
             .expect("This should be fine");
 
-        let token_id = self.data.id.expect("This should be fine");
-
-        let contract: &'static _ = Box::leak(Box::new(
-            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC1155_ABI)
-                .unwrap(),
-        ));
-
-        let response: Result<Vec<U256>, web3::contract::Error> = contract
-            .clone()
-            .query(
-                "balanceOfBatch",
-                (
-                    user_addresses
-                        .iter()
-                        .map(|ua| ua.address)
-                        .collect::<Vec<Address>>(),
-                    vec![token_id],
-                ),
-                None,
-                Options::default(),
-                None,
-            )
-            .await;
-
-        let mut error = None;
-        let mut amounts: Option<Vec<Amount>> = None;
-
-        match response {
-            Ok(r) => amounts = Some(r.iter().map(|v| v.as_u128() as Amount).collect()),
-            Err(e) => error = Some(e.to_string()),
-        }
-
-        user_addresses
+        provider
+            .get_special_balance(self.address, self.data.id, &user_addresses)
+            .await
             .iter()
             .enumerate()
-            .map(|(idx, ua)| {
-                let amount = amounts.as_ref().expect("This should be fine")[idx];
+            .map(|(idx, b)| {
+                let mut error = None;
+                let mut amount = None;
+
+                match b {
+                    Ok(v) => amount = Some(*v),
+                    Err(e) => error = Some(e.to_string()),
+                };
+
+                let user_id = users
+                    .iter()
+                    .find(|u| u.addresses.contains(&user_addresses[idx]))
+                    .unwrap()
+                    .id;
 
                 ReqUserAccess {
                     requirement_id: self.id,
-                    user_id: ua.user_id,
+                    user_id,
                     access: if error.is_none() {
-                        Some(check_if_in_range(amount, &self.data.limits, false))
+                        Some(check_if_in_range(
+                            amount.expect("This should be fine"),
+                            &self.data.limits,
+                            false,
+                        ))
                     } else {
                         None
                     },
-                    amount: if error.is_none() { Some(amount) } else { None },
+                    amount: if error.is_none() { amount } else { None },
                     warning: None,
-                    error: error.clone(),
+                    error,
                 }
             })
             .collect()
@@ -115,7 +89,7 @@ impl TryFrom<&Requirement> for Erc1155Requirement {
             Some(chain) => {
                 if PROVIDERS.get(&(chain as u8)).is_none() {
                     return Err(CheckableError::NoSuchChain(
-                        CheckableError::NoSuchChain(format!("{:?}", chain)).to_string(),
+                        CheckableError::NoSuchChain(format!("{chain:?}")).to_string(),
                     ));
                 }
 
@@ -161,13 +135,11 @@ mod test {
             general::token::nft::erc1155::{Erc1155Requirement, NftData},
             Checkable,
         },
-        types::{AmountLimits, Chain, User, U256},
+        types::{AmountLimits, EvmChain, User, U256},
     };
 
     #[tokio::test]
     async fn erc1155_check() {
-        dotenv::dotenv().ok();
-
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0x283d678711daa088640c86a1ad3f12c00ec1252e")],
@@ -182,12 +154,12 @@ mod test {
 
         let req = Erc1155Requirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: EvmChain::Ethereum,
             address: address!("0x76be3b62873462d2142405439777e971754e8e77"),
             data: NftData {
                 id: Some(U256::from_dec_str("10527").unwrap()),
                 limits: Some(AmountLimits {
-                    min_amount: Some(595.0),
+                    min_amount: Some(3.0),
                     max_amount: None,
                 }),
             },
@@ -197,7 +169,10 @@ mod test {
             req.check(&users_1)
                 .await
                 .iter()
-                .map(|a| a.access.unwrap_or_default())
+                .map(|a| {
+                    a.amount;
+                    a.access.unwrap_or_default()
+                })
                 .collect::<Vec<bool>>(),
             vec![true]
         );

@@ -1,7 +1,4 @@
-use crate::{
-    types::{Address, U256},
-    utils::u256_from_str,
-};
+use crate::{evm::u256_from_str, Address, U256};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -11,15 +8,14 @@ pub enum BalancyError {
     ChainNotSupported(String),
     #[error("User doesn't have token associated with address `{0}`")]
     NoSuchTokenInWallet(Address),
-    #[error("{0}")]
-    RequestFailed(#[from] reqwest::Error),
-}
-
-pub enum TokenType {
-    Native,
-    Erc20 { address: Address },
-    Erc721 { address: Address, id: U256 },
-    Erc1155 { address: Address, id: U256 },
+    #[error("Invalid Balancy request")]
+    InvalidBalancyRequest,
+    #[error("Too many requests to Balancy")]
+    TooManyRequests,
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+    #[error("Got response with status code `{0}`")]
+    Unknown(u16),
 }
 
 #[derive(Deserialize, Debug)]

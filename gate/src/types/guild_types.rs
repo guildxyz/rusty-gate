@@ -51,11 +51,6 @@ pub struct User {
     pub platform_users: Option<Vec<PlatformUser>>,
 }
 
-pub struct UserAddress {
-    pub user_id: NumberId,
-    pub address: Address,
-}
-
 #[derive(Clone)]
 pub struct ReqUserAccess {
     pub requirement_id: NumberId,

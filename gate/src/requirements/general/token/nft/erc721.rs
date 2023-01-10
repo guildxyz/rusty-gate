@@ -1,37 +1,25 @@
 use crate::{
-    providers::PROVIDERS,
     requirements::{
-        errors::CheckableError,
-        general::token::{nft::NftData, ERC721_ABI},
-        utils::check_if_in_range,
-        Checkable,
+        errors::CheckableError, general::token::nft::NftData, utils::check_if_in_range, Checkable,
     },
-    types::{
-        Address, Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User,
-        UserAddress, U256,
-    },
+    types::{Address, AmountLimits, EvmChain, NumberId, ReqUserAccess, Requirement, User},
 };
 use async_trait::async_trait;
-use web3::contract::Options;
+use providers::{evm::general::PROVIDERS, BalanceQuerier};
 
 pub struct Erc721Requirement {
     id: NumberId,
     address: Address,
     data: NftData,
-    chain: Chain,
+    chain: EvmChain,
 }
 
 #[async_trait]
 impl Checkable for Erc721Requirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
-        let user_addresses: Vec<UserAddress> = users
+        let user_addresses: Vec<Address> = users
             .iter()
-            .flat_map(|u| {
-                u.addresses.iter().cloned().map(|address| UserAddress {
-                    user_id: u.id,
-                    address,
-                })
-            })
+            .flat_map(|u| u.addresses.iter().cloned())
             .collect();
 
         if user_addresses.is_empty() {
@@ -52,60 +40,44 @@ impl Checkable for Erc721Requirement {
             .get(&(self.chain as u8))
             .expect("This should be fine");
 
-        let contract: &'static _ = Box::leak(Box::new(
-            web3::contract::Contract::from_json(provider.single.eth(), self.address, ERC721_ABI)
-                .unwrap(),
-        ));
+        provider
+            .get_non_fungible_balance(self.address, self.data.id, &user_addresses)
+            .await
+            .iter()
+            .enumerate()
+            .map(|(idx, b)| {
+                let mut error = None;
+                let mut amount = None;
 
-        futures::future::join_all(user_addresses.iter().map(|ua| async move {
-            let mut error = None;
-            let mut amount = None;
+                match b {
+                    Ok(v) => amount = Some(*v),
+                    Err(e) => error = Some(e.to_string()),
+                };
 
-            let response: Result<U256, web3::contract::Error> = match self.data.id {
-                Some(id) => {
-                    let owner_res: Result<Address, web3::contract::Error> = contract
-                        .clone()
-                        .query("ownerOf", (id,), None, Options::default(), None)
-                        .await;
+                let user_id = users
+                    .iter()
+                    .find(|u| u.addresses.contains(&user_addresses[idx]))
+                    .unwrap()
+                    .id;
 
-                    let res = match owner_res {
-                        Ok(owner) => i32::from(owner == ua.address).into(),
-                        Err(_) => 0.into(),
-                    };
-
-                    Ok(res)
+                ReqUserAccess {
+                    requirement_id: self.id,
+                    user_id,
+                    access: if error.is_none() {
+                        Some(check_if_in_range(
+                            amount.expect("This should be fine"),
+                            &self.data.limits,
+                            false,
+                        ))
+                    } else {
+                        None
+                    },
+                    amount: if error.is_none() { amount } else { None },
+                    warning: None,
+                    error,
                 }
-                None => {
-                    contract
-                        .clone()
-                        .query("balanceOf", (ua.address,), None, Options::default(), None)
-                        .await
-                }
-            };
-
-            match response {
-                Ok(r) => amount = Some(r.as_u128() as Amount),
-                Err(e) => error = Some(e.to_string()),
-            }
-
-            ReqUserAccess {
-                requirement_id: self.id,
-                user_id: ua.user_id,
-                access: if error.is_none() {
-                    Some(check_if_in_range(
-                        amount.expect("This should be fine"),
-                        &self.data.limits,
-                        false,
-                    ))
-                } else {
-                    None
-                },
-                amount: if error.is_none() { amount } else { None },
-                warning: None,
-                error,
-            }
-        }))
-        .await
+            })
+            .collect()
     }
 }
 
@@ -117,7 +89,7 @@ impl TryFrom<&Requirement> for Erc721Requirement {
             Some(chain) => {
                 if PROVIDERS.get(&(chain as u8)).is_none() {
                     return Err(CheckableError::NoSuchChain(
-                        CheckableError::NoSuchChain(format!("{:?}", chain)).to_string(),
+                        CheckableError::NoSuchChain(format!("{chain:?}")).to_string(),
                     ));
                 }
 
@@ -157,13 +129,11 @@ mod test {
             general::token::nft::erc721::{Erc721Requirement, NftData},
             Checkable,
         },
-        types::{Chain, User, U256},
+        types::{EvmChain, User, U256},
     };
 
     #[tokio::test]
     async fn erc721_check() {
-        dotenv::dotenv().ok();
-
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
@@ -178,7 +148,7 @@ mod test {
 
         let req1 = Erc721Requirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: EvmChain::Ethereum,
             address: address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
             data: NftData {
                 id: Some(U256::from_dec_str(
@@ -191,7 +161,7 @@ mod test {
 
         let req2 = Erc721Requirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: EvmChain::Ethereum,
             address: address!("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
             data: NftData {
                 id: None,

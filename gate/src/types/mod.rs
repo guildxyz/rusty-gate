@@ -1,41 +1,16 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-mod balancy_types;
 mod platform;
 mod requirement;
 mod user;
-pub use balancy_types::*;
 pub use platform::*;
 pub use requirement::*;
 pub use user::*;
 
-pub use web3::types::{Address, U256};
+pub use providers::{Address, EvmChain, U256};
 pub type NumberId = u64;
 pub type Amount = f64;
-
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Chain {
-    Ethereum,
-    Polygon,
-    Gnosis,
-    Bsc,
-    Fantom,
-    Avalanche,
-    Heco,
-    Harmony,
-    Goerli,
-    Arbitrum,
-    Celo,
-    Optimism,
-    Moonriver,
-    Rinkeby,
-    Metis,
-    Cronos,
-    Boba,
-    Palm,
-}
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]

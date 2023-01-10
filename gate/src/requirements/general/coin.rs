@@ -1,31 +1,22 @@
 use crate::{
-    providers::PROVIDERS,
     requirements::{errors::CheckableError, utils::check_if_in_range, Checkable},
-    types::{Amount, AmountLimits, Chain, NumberId, ReqUserAccess, Requirement, User, UserAddress},
+    types::{Address, AmountLimits, EvmChain, NumberId, ReqUserAccess, Requirement, User},
 };
-use anyhow::Result;
 use async_trait::async_trait;
+use providers::{evm::general::PROVIDERS, BalanceQuerier};
 
 pub struct CoinRequirement {
     id: NumberId,
     data: Option<AmountLimits>,
-    chain: Chain,
+    chain: EvmChain,
 }
-
-const DECIMALS: u32 = 18;
-const DIVISOR: Amount = 10_u128.pow(DECIMALS) as Amount;
 
 #[async_trait]
 impl Checkable for CoinRequirement {
     async fn check(&self, users: &[User]) -> Vec<ReqUserAccess> {
-        let user_addresses: Vec<UserAddress> = users
+        let user_addresses: Vec<Address> = users
             .iter()
-            .flat_map(|u| {
-                u.addresses.iter().cloned().map(|address| UserAddress {
-                    user_id: u.id,
-                    address,
-                })
-            })
+            .flat_map(|u| u.addresses.iter().cloned())
             .collect();
 
         if user_addresses.is_empty() {
@@ -46,35 +37,44 @@ impl Checkable for CoinRequirement {
             .get(&(self.chain as u8))
             .expect("This should be fine");
 
-        futures::future::join_all(user_addresses.iter().map(|ua| async move {
-            let mut error = None;
-            let mut amount = None;
+        provider
+            .get_native_balance(&user_addresses)
+            .await
+            .iter()
+            .enumerate()
+            .map(|(idx, b)| {
+                let mut error = None;
+                let mut amount = None;
 
-            let response = provider.single.eth().balance(ua.address, None).await;
+                match b {
+                    Ok(v) => amount = Some(*v),
+                    Err(e) => error = Some(e.to_string()),
+                };
 
-            match response {
-                Ok(r) => amount = Some(r.as_u128() as Amount / DIVISOR),
-                Err(e) => error = Some(e.to_string()),
-            }
+                let user_id = users
+                    .iter()
+                    .find(|u| u.addresses.contains(&user_addresses[idx]))
+                    .unwrap()
+                    .id;
 
-            ReqUserAccess {
-                requirement_id: self.id,
-                user_id: ua.user_id,
-                access: if error.is_none() {
-                    Some(check_if_in_range(
-                        amount.expect("This should be fine"),
-                        &self.data,
-                        false,
-                    ))
-                } else {
-                    None
-                },
-                amount: if error.is_none() { amount } else { None },
-                warning: None,
-                error,
-            }
-        }))
-        .await
+                ReqUserAccess {
+                    requirement_id: self.id,
+                    user_id,
+                    access: if error.is_none() {
+                        Some(check_if_in_range(
+                            amount.expect("This should be fine"),
+                            &self.data,
+                            false,
+                        ))
+                    } else {
+                        None
+                    },
+                    amount: if error.is_none() { amount } else { None },
+                    warning: None,
+                    error,
+                }
+            })
+            .collect()
     }
 }
 
@@ -85,7 +85,7 @@ impl TryFrom<&Requirement> for CoinRequirement {
         match req.chain {
             Some(chain) => {
                 if PROVIDERS.get(&(chain as u8)).is_none() {
-                    return Err(CheckableError::NoSuchChain(format!("{:?}", chain)));
+                    return Err(CheckableError::NoSuchChain(format!("{chain:?}")));
                 }
 
                 let res = CoinRequirement {
@@ -106,13 +106,11 @@ mod test {
     use crate::{
         address,
         requirements::{general::coin::CoinRequirement, Checkable},
-        types::{AmountLimits, Chain, User},
+        types::{AmountLimits, EvmChain, User},
     };
 
     #[tokio::test]
     async fn coin_check() {
-        dotenv::dotenv().ok();
-
         let users_1 = vec![User {
             id: 0,
             addresses: vec![address!("0xE43878Ce78934fe8007748FF481f03B8Ee3b97DE")],
@@ -127,7 +125,7 @@ mod test {
 
         let req = CoinRequirement {
             id: 0,
-            chain: Chain::Ethereum,
+            chain: EvmChain::Ethereum,
             data: Some(AmountLimits {
                 min_amount: Some(0.0004),
                 max_amount: None,
