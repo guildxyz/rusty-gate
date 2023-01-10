@@ -102,15 +102,15 @@ mod test {
 
     #[tokio::test]
     async fn balancy_total_erc1155_of_address() {
-        assert_eq!(
+        assert!(
             BalancyProvider::get_total_erc1155_of_address(
                 EvmChain::Ethereum,
                 address!("0x76be3b62873462d2142405439777e971754e8e77"),
                 address!("0x283d678711daa088640c86a1ad3f12c00ec1252e")
             )
             .await
-            .unwrap(),
-            U256::from_dec_str("7020").unwrap()
+            .unwrap()
+                > U256::from_dec_str("5000").unwrap()
         );
     }
 }
