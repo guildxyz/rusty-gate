@@ -16,14 +16,6 @@ jobs:
   test:
     runs-on: rust
 
-    env:
-      RUSTFLAGS: -Dwarnings # fails on warnings as well
-      ETHEREUM_RPC: ${{ secrets.ETHEREUM_RPC }}
-      POLYGON_RPC: ${{ secrets.POLYGON_RPC }}
-      BSC_RPC: ${{ secrets.BSC_RPC }}
-      GNOSIS_RPC: ${{ secrets.GNOSIS_RPC }}
-      ARBITRUM_RPC: ${{ secrets.ARBITRUM_RPC }}
-      GOERLI_RPC: ${{ secrets.GOERLI_RPC }}
     steps:
       - uses: actions-rs/toolchain@v1
         with:
@@ -45,4 +37,14 @@ jobs:
         run: cargo clippy --color=always --all-targets --all-features --examples --tests
 
       - name: test
+
+        env:
+          RUSTFLAGS: -Dwarnings # fails on warnings as well
+          ETHEREUM_RPC: ${{ secrets.ETHEREUM_RPC }}
+          POLYGON_RPC: ${{ secrets.POLYGON_RPC }}
+          BSC_RPC: ${{ secrets.BSC_RPC }}
+          GNOSIS_RPC: ${{ secrets.GNOSIS_RPC }}
+          ARBITRUM_RPC: ${{ secrets.ARBITRUM_RPC }}
+          GOERLI_RPC: ${{ secrets.GOERLI_RPC }}
+
         run: cargo t --workspace --all-features
