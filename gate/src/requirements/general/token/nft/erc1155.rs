@@ -159,7 +159,7 @@ mod test {
             data: NftData {
                 id: Some(U256::from_dec_str("10527").unwrap()),
                 limits: Some(AmountLimits {
-                    min_amount: Some(4.0),
+                    min_amount: Some(3.0),
                     max_amount: None,
                 }),
             },
