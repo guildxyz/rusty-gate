@@ -89,7 +89,7 @@ impl TryFrom<&Requirement> for Erc721Requirement {
             Some(chain) => {
                 if PROVIDERS.get(&(chain as u8)).is_none() {
                     return Err(CheckableError::NoSuchChain(
-                        CheckableError::NoSuchChain(format!("{:?}", chain)).to_string(),
+                        CheckableError::NoSuchChain(format!("{chain:?}")).to_string(),
                     ));
                 }
 

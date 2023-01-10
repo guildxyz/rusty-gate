@@ -36,14 +36,13 @@ pub async fn get_address_tokens(
     address: Address,
 ) -> Result<AddressTokenResponse, BalancyError> {
     match CHAIN_IDS.get(&(chain as u32)) {
-        None => Err(BalancyError::ChainNotSupported(format!("{:?}", chain))),
+        None => Err(BalancyError::ChainNotSupported(format!("{chain:?}"))),
         Some(id) => {
             let res = CLIENT
                 .read()
                 .await
                 .get(format!(
-                    "{BASE_URL}/{ADDRESS_TOKENS}{:#x}{BALANCY_CHAIN}{id}",
-                    address
+                    "{BASE_URL}/{ADDRESS_TOKENS}{address:#x}{BALANCY_CHAIN}{id}"
                 ))
                 .send()
                 .await?;

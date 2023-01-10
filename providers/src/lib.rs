@@ -1,3 +1,5 @@
+#![deny(clippy::dbg_macro)]
+
 pub mod evm;
 
 use async_trait::async_trait;
